@@ -23,37 +23,37 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initDropdowns() {
-  const taxonomyLi = document.getElementById('taxonomy-item');
-  if (!taxonomyLi) return;
+  const dropdownItems = document.querySelectorAll('.dropdown-trigger');
+  if (!dropdownItems.length) return;
   let isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   let isMobileView = window.matchMedia("(max-width: 780px)").matches;
 
-  function handleClick(e) {
-    if (window.innerWidth <= 780 || isTouchDevice) {
-      e.stopPropagation();
-      if (e.target.closest('.dropdown-menu')) return;
-      taxonomyLi.classList.toggle('active');
-    }
-  }
-
   if (isTouchDevice || isMobileView) {
-    taxonomyLi.addEventListener('click', function(e) {
-      if (e.target.tagName === 'A' || e.target === taxonomyLi || e.target.parentElement === taxonomyLi) {
-        e.preventDefault();
-        taxonomyLi.classList.toggle('active');
-      }
+    dropdownItems.forEach((item) => {
+      item.addEventListener('click', function(e) {
+        if (e.target.closest('.dropdown-menu')) return;
+        if (e.target.tagName === 'A' || e.target === item || e.target.parentElement === item) {
+          e.preventDefault();
+          dropdownItems.forEach((other) => {
+            if (other !== item) other.classList.remove('active');
+          });
+          item.classList.toggle('active');
+        }
+      });
     });
   }
 
   document.addEventListener('click', function(e) {
-    if (taxonomyLi.classList.contains('active') && !taxonomyLi.contains(e.target)) {
-      taxonomyLi.classList.remove('active');
-    }
+    dropdownItems.forEach((item) => {
+      if (item.classList.contains('active') && !item.contains(e.target)) {
+        item.classList.remove('active');
+      }
+    });
   });
 
   window.addEventListener('resize', function() {
-    if (window.innerWidth > 780 && taxonomyLi.classList.contains('active')) {
-      taxonomyLi.classList.remove('active');
+    if (window.innerWidth > 780) {
+      dropdownItems.forEach((item) => item.classList.remove('active'));
     }
   });
 }
