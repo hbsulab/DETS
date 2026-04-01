@@ -8,86 +8,49 @@
 </head>
 <body>
 
-<!-- 公共组件占位符 -->
 <div id="header-placeholder"></div>
 <div id="navigator-placeholder"></div>
 
-<!-- 页面主要内容（用户可替换的部分） -->
 <div id="main_container">
   <div class="container">
-    <!-- 页面标题 -->
     <div class="page-header">
       <h1>Alpha (B.1.1.7)</h1>
-      <p>Overview of Alpha lineage emergence, hallmark mutations, and epidemiological impact.</p>
+      <p>Profile of early high-growth lineage associated with increased transmission during 2020-2021.</p>
     </div>
 
-    <!-- 文本内容 -->
     <div class="text-block">
-      <h2>Understanding the Evolutionary Trajectory</h2>
-      <p>Since its emergence in late 2019, SARS-CoV-2 has accumulated numerous mutations across its genome. Key variants such as Alpha, Delta, and Omicron have successively dominated global transmission, driven by changes in transmissibility, immune evasion, and virulence. The Deep Evolution Tracing System integrates time-calibrated phylogenetic trees, mutational signatures, and epidemiological metadata to provide a detailed view of these evolutionary events.</p>
-      <p>Our platform leverages daily updated sequences from GISAID and NCBI, enabling near real-time tracking of emerging lineages. Researchers can explore clade dynamics, mutation frequencies, and lineage replacement patterns across different geographical regions and time windows.</p>
+      <h2>Alpha Lineage Context</h2>
+      <p>Alpha emerged with a mutation set that included N501Y and rapidly expanded across multiple regions.</p>
+      <p>Its rise marked a major early shift in the pandemic's evolutionary landscape.</p>
     </div>
 
-    <!-- 图表区块 -->
     <div class="visualization-block">
-      <h3>📈 Phylogenetic Tree Overview</h3>
+      <h3>Alpha Expansion Pattern</h3>
       <div class="viz-placeholder">
-        <svg width="100%" height="200" viewBox="0 0 800 200" preserveAspectRatio="none" style="max-width: 100%;">
-          <path d="M50,100 L150,100 M150,100 L150,50 L250,50 M150,100 L150,150 L250,150 M250,50 L350,50 M250,150 L350,150 M350,50 L400,30 L450,50 M350,150 L400,170 L450,150" stroke="#2c6e8f" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <circle cx="400" cy="30" r="5" fill="#2f9bbb"/>
-          <circle cx="400" cy="170" r="5" fill="#2f9bbb"/>
-          <text x="410" y="25" font-size="12" fill="#1f6e8c">Omicron</text>
-          <text x="410" y="175" font-size="12" fill="#1f6e8c">Delta</text>
-        </svg>
-        <p style="margin-top: 16px;">Interactive phylogenetic tree placeholder — integrate D3.js or other libraries for dynamic visualization.</p>
+        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
       </div>
     </div>
 
-    <!-- 数据表格 -->
     <div class="data-table-wrapper">
-      <h3>📊 Key Variants and Their Characteristics</h3>
+      <h3>Alpha Key Points</h3>
       <table class="data-table">
         <thead>
-          <tr><th>Variant</th><th>WHO Label</th><th>First Detected</th><th>Spike Mutations</th><th>Relative Fitness</th></tr>
+          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
         </thead>
         <tbody>
-          <tr><td>Alpha</td><td>Alpha</td><td>Sep 2020</td><td>N501Y, D614G</td><td>+50%</td></tr>
-          <tr><td>Delta</td><td>Delta</td><td>Oct 2020</td><td>L452R, P681R</td><td>+60%</td></tr>
-          <tr><td>Omicron BA.1</td><td>Omicron</td><td>Nov 2021</td><td>~30 mutations</td><td>+100%</td></tr>
-          <tr><td>Omicron BA.5</td><td>Omicron</td><td>Mar 2022</td><td>L452R, F486V</td><td>High immune escape</td></tr>
-          <tr><td>JN.1</td><td>Omicron</td><td>Sep 2023</td><td>L455S, F456L</td><td>Enhanced transmissibility</td></tr>
+          <tr><td>Representative substitutions</td><td>N501Y, P681H</td><td>Associated with entry and cleavage context</td></tr>
+          <tr><td>First major expansion</td><td>Late 2020</td><td>Rapid frequency increase in several countries</td></tr>
+          <tr><td>Historical role</td><td>Wave-defining VOC</td><td>Eventually displaced by Delta</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- 卡片网格 -->
-    <div class="cards-grid">
-      <div class="info-card">
-        <h4><span class="card-icon">🧬</span> Mutation Tracker</h4>
-        <p>Monitor lineage-defining mutations across time and geography. Explore interactive heatmaps and frequency plots.</p>
-        <a href="#" class="more-link">Launch tool →</a>
-      </div>
-      <div class="info-card">
-        <h4><span class="card-icon">🌍</span> Global Phylogeny</h4>
-        <p>View time-resolved phylogenetic trees with geographic annotations. Filter by date, region, and lineage.</p>
-        <a href="#" class="more-link">Explore trees →</a>
-      </div>
-      <div class="info-card">
-        <h4><span class="card-icon">📥</span> Data Downloads</h4>
-        <p>Access curated sequence alignments, metadata tables, and tree files for downstream analysis.</p>
-        <a href="#" class="more-link">Download →</a>
-      </div>
-    </div>
-
-    <!-- 脚注区块 -->
     <div class="footnote-block">
-      <h4>📚 References & Acknowledgements</h4>
+      <h4>Notes</h4>
       <ul>
-        <li>GISAID: Global Initiative on Sharing All Influenza Data — <a href="#" style="color:#1b6c8a;">acknowledgement</a></li>
-        <li>Nextstrain: Real-time tracking of pathogen evolution</li>
-        <li>Our research: <em>Deep Evolution Tracing System v2.0</em> — manuscript under review</li>
+        <li>Use these values as editable starter content for your project.</li>
+        <li>Replace with live data streams or curated datasets when ready.</li>
       </ul>
-      <p style="margin-top: 12px;">For detailed methodology, please refer to the <a href="#" style="color:#1b6c8a;">documentation</a>.</p>
     </div>
   </div>
 </div>

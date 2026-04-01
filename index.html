@@ -3,32 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>DETS | Home</title>
+  <title>DETS | SARS-CoV-2 Evolution Tracing System</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<!-- 公共组件占位符 -->
 <div id="header-placeholder"></div>
 <div id="navigator-placeholder"></div>
 
-<!-- 页面主要内容（用户可替换的部分） -->
 <div id="main_container">
   <div class="container">
-    <!-- 页面标题 -->
     <div class="page-header">
       <h1>SARS-CoV-2 Evolutionary Dynamics</h1>
       <p>Comprehensive tracking of viral evolution, variant emergence, and global spread through high-resolution genomic epidemiology.</p>
     </div>
 
-    <!-- 文本内容 -->
     <div class="text-block">
       <h2>Understanding the Evolutionary Trajectory</h2>
       <p>Since its emergence in late 2019, SARS-CoV-2 has accumulated numerous mutations across its genome. Key variants such as Alpha, Delta, and Omicron have successively dominated global transmission, driven by changes in transmissibility, immune evasion, and virulence. The Deep Evolution Tracing System integrates time-calibrated phylogenetic trees, mutational signatures, and epidemiological metadata to provide a detailed view of these evolutionary events.</p>
       <p>Our platform leverages daily updated sequences from GISAID and NCBI, enabling near real-time tracking of emerging lineages. Researchers can explore clade dynamics, mutation frequencies, and lineage replacement patterns across different geographical regions and time windows.</p>
     </div>
 
-    <!-- 图表区块 -->
     <div class="visualization-block">
       <h3>📈 Phylogenetic Tree Overview</h3>
       <div class="viz-placeholder">
@@ -43,7 +38,13 @@
       </div>
     </div>
 
-    <!-- 数据表格 -->
+    <div class="visualization-block">
+      <h3>Global Evolution Snapshot</h3>
+      <div class="viz-placeholder">
+        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+      </div>
+    </div>
+
     <div class="data-table-wrapper">
       <h3>📊 Key Variants and Their Characteristics</h3>
       <table class="data-table">
@@ -60,7 +61,20 @@
       </table>
     </div>
 
-    <!-- 卡片网格 -->
+    <div class="data-table-wrapper">
+      <h3>Core Tracking Metrics</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Tracked lineages</td><td>Major VOC + selected VOI</td><td>Configurable list by region and time</td></tr>
+          <tr><td>Update cadence</td><td>Daily/weekly</td><td>Depends on sequence ingestion pipeline</td></tr>
+          <tr><td>Data sources</td><td>GISAID, NCBI</td><td>Plus local metadata curation</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="cards-grid">
       <div class="info-card">
         <h4><span class="card-icon">🧬</span> Mutation Tracker</h4>
@@ -79,7 +93,6 @@
       </div>
     </div>
 
-    <!-- 脚注区块 -->
     <div class="footnote-block">
       <h4>📚 References & Acknowledgements</h4>
       <ul>
