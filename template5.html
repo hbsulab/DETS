@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>DEST | SARS-CoV-2 Evolution Tracing System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      background: #f4f7fc;
+      color: #1a2c3e;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ========= HEADER 区域 - 居中对齐 ========= */
+    #header_container {
+      background: linear-gradient(135deg, #0b2b3b 0%, #1a4a5f 100%);
+      color: white;
+      padding: 28px 0;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    #header_container .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+      text-align: left;
+    }
+
+    #header_logo {
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+      transition: transform 0.2s ease;
+    }
+
+    #header_logo:hover {
+      transform: scale(1.02);
+    }
+
+    #header_logo img {
+      width: 120px;
+    }
+
+    #header_titles h1 {
+      font-size: 1.9rem;
+      letter-spacing: -0.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    #header_titles h2 {
+      font-size: 1.1rem;
+      font-weight: 400;
+      opacity: 0.9;
+      border-left: 3px solid #6bc4e2;
+      padding-left: 14px;
+    }
+
+    /* ========= 导航栏 ========= */
+    #navigator_container {
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    #navigator {
+      display: flex;
+      justify-content: center;
+    }
+
+    #navigator ul {
+      display: flex;
+      list-style: none;
+      gap: 6px;
+      padding: 0;
+      margin: 0;
+    }
+
+    #navigator ul li {
+      position: relative;
+      margin: 0;
+    }
+
+    #navigator ul li a {
+      display: block;
+      padding: 16px 20px;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #1e3a4d;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border-radius: 12px;
+      letter-spacing: 0.3px;
+    }
+
+    #navigator ul li a:hover {
+      background: #e2f0f7;
+      color: #0f5c7a;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #ffffff;
+      min-width: 220px;
+      border-radius: 12px;
+      box-shadow: 0 18px 32px -12px rgba(0, 0, 0, 0.2);
+      padding: 8px 0;
+      list-style: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(12px);
+      transition: all 0.2s ease;
+      z-index: 200;
+      border: 1px solid #eef2f6;
+    }
+
+    .dropdown-trigger:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .dropdown-menu li {
+      width: 100%;
+    }
+
+    .dropdown-menu li a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #2c4c64;
+      border-radius: 0;
+      background: transparent;
+      line-height: 1.4;
+    }
+
+    .dropdown-menu li a:hover {
+      background: #e6f3fa;
+      color: #0a6b8c;
+      padding-left: 26px;
+    }
+
+    .dropdown-trigger > a {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dropdown-trigger > a::after {
+      content: "▼";
+      font-size: 0.7rem;
+      transition: transform 0.2s;
+      opacity: 0.7;
+    }
+
+    .dropdown-trigger:hover > a::after {
+      transform: rotate(180deg);
+    }
+
+    /* ========= 主内容区域通用样式 ========= */
+    #main_container {
+      padding: 48px 0 64px;
+    }
+
+    /* 页面标题区块 */
+    .page-header {
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    .page-header h1 {
+      font-size: 2.5rem;
+      color: #0e4b64;
+      margin-bottom: 12px;
+    }
+    .page-header p {
+      font-size: 1.2rem;
+      color: #2c5368;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* 文本内容区块 */
+    .text-block {
+      background: white;
+      border-radius: 28px;
+      padding: 32px 36px;
+      margin-bottom: 48px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      border: 1px solid #e2edf2;
+    }
+    .text-block h2 {
+      font-size: 1.8rem;
+      color: #1b6c8a;
+      margin-bottom: 16px;
+    }
+    .text-block p {
+      margin-bottom: 16px;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #2f556b;
+    }
+
+    /* 图表/可视化区块 */
+    .visualization-block {
+      background: #eef4fa;
+      border-radius: 24px;
+      padding: 32px;
+      margin-bottom: 48px;
+      text-align: center;
+      border: 1px solid #d4e2ec;
+    }
+    .visualization-block h3 {
+      font-size: 1.4rem;
+      color: #165a74;
+      margin-bottom: 16px;
+    }
+    .viz-placeholder {
+      background: #ffffffcc;
+      border-radius: 20px;
+      padding: 40px 20px;
+      color: #386a84;
+    }
+
+    /* 数据表格样式 */
+    .data-table-wrapper {
+      margin-bottom: 48px;
+    }
+    .data-table-wrapper h3 {
+      font-size: 1.4rem;
+      color: #165a74;
+      margin-bottom: 16px;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .data-table th, .data-table td {
+      border: 1px solid #e0ecf3;
+      padding: 12px 16px;
+      text-align: left;
+    }
+    .data-table th {
+      background: #eef3f8;
+      font-weight: 600;
+      color: #1a5c74;
+    }
+    .data-table td {
+      color: #2c4a62;
+    }
+
+    /* 卡片网格 (用于资源、特性等) */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin: 32px 0 48px;
+    }
+    .info-card {
+      background: white;
+      border-radius: 28px;
+      padding: 24px 26px;
+      transition: all 0.25s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.03);
+      border: 1px solid #e2edf2;
+    }
+    .info-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 30px -12px rgba(0, 70, 90, 0.15);
+      border-color: #caddf0;
+    }
+    .info-card h4 {
+      font-size: 1.5rem;
+      margin-bottom: 14px;
+      color: #1b6c8a;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .card-icon {
+      font-size: 2rem;
+    }
+    .info-card p {
+      color: #2f556b;
+      margin-bottom: 18px;
+    }
+    .more-link {
+      color: #1482a8;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px dashed #9fc9dc;
+    }
+    .more-link:hover {
+      color: #0a5f7e;
+      border-bottom-style: solid;
+    }
+
+    /* 脚注/引用区块 */
+    .footnote-block {
+      background: #eef4f8;
+      border-radius: 24px;
+      padding: 28px 32px;
+      margin-top: 32px;
+      border-left: 6px solid #2f9bbb;
+    }
+    .footnote-block h4 {
+      font-size: 1.2rem;
+      color: #165a74;
+      margin-bottom: 12px;
+    }
+    .footnote-block ul {
+      margin-left: 20px;
+      color: #2c5a72;
+    }
+    .footnote-block li {
+      margin-bottom: 6px;
+    }
+
+    /* ========= FOOTER 区域 ========= */
+    #footer_container {
+      background: #0c2a36;
+      color: #cddfe6;
+      padding: 32px 0 24px;
+      border-top: 1px solid #214e60;
+      font-size: 0.9rem;
+    }
+
+    .footer-content {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      color: #bbd9e6;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: white;
+    }
+
+    .copyright {
+      opacity: 0.8;
+      font-size: 0.85rem;
+    }
+
+    /* 响应式 */
+    @media (max-width: 780px) {
+      #header_container .container {
+        flex-direction: column;
+        text-align: center;
+        justify-content: center;
+      }
+      #header_titles h2 {
+        border-left: none;
+        padding-left: 0;
+      }
+      #navigator ul {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+      }
+      #navigator ul li a {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        border-radius: 10px;
+      }
+      .dropdown-menu {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        box-shadow: none;
+        background: #f8fafc;
+        padding-left: 24px;
+        margin-top: 4px;
+        display: none;
+        border: none;
+      }
+      .dropdown-trigger:hover .dropdown-menu {
+        display: block;
+      }
+      .dropdown-trigger .dropdown-menu {
+        display: none;
+      }
+      .dropdown-trigger.active .dropdown-menu {
+        display: block;
+      }
+      .page-header h1 {
+        font-size: 2rem;
+      }
+      .text-block {
+        padding: 24px;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #e2ecf0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #7fa9bd;
+      border-radius: 10px;
+    }
+
+    /* 移动端下拉菜单 active 样式 */
+    @media (max-width: 780px) {
+      .dropdown-trigger .dropdown-menu {
+        display: none;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        position: relative;
+        top: 0;
+        box-shadow: none;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-top: 6px;
+        border: 1px solid #d4e2ec;
+        width: 100%;
+      }
+      .dropdown-trigger.active .dropdown-menu {
+        display: block;
+      }
+      .dropdown-trigger:hover .dropdown-menu {
+        display: none;
+      }
+      .dropdown-trigger.active .dropdown-menu {
+        display: block;
+      }
+      .dropdown-trigger.active > a::after {
+        transform: rotate(180deg);
+      }
+      #navigator ul li a {
+        border-radius: 10px;
+      }
+    }
+
+    @media (min-width: 781px) {
+      .dropdown-trigger.active .dropdown-menu {
+        display: none;
+      }
+      .dropdown-trigger:hover .dropdown-menu {
+        display: block;
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+      .dropdown-menu {
+        display: block;
+      }
+    }
+    @media (min-width: 781px) {
+      .dropdown-menu {
+        display: block;
+        opacity: 0;
+        visibility: hidden;
+      }
+      .dropdown-trigger:hover .dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+    }
+    #navigator ul li a {
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- header 区域 -->
+<div id="header_container">
+  <div class="container">
+    <div id="header_logo">
+        <img src="images/logo1.png" alt="DETS logo" />
+    </div>
+    <div id="header_titles">
+      <h1>Deep Evolution Tracing System</h1>
+      <h2>Time course studies of SARS-CoV-2 · Genomic Epidemiology</h2>
+    </div>
+  </div>
+</div>
+
+<!-- 导航栏 -->
+<div id="navigator_container">
+  <div class="container">
+    <div id="navigator">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li class="dropdown-trigger" id="taxonomy-item">
+          <a href="javascript:void(0);">Taxonomy</a>
+          <ul class="dropdown-menu">
+            <li><a href="#">Alpha</a></li>
+            <li><a href="#">Beta</a></li>
+            <li><a href="#">Delta</a></li>
+            <li><a href="#">Omicron (BA.2)</a></li>
+            <li><a href="#">Omicron (BA.4&5)</a></li>
+            <li><a href="#">JN.1</a></li>
+          </ul>
+        </li>
+        <li class="dropdown-trigger" id="virus-item">
+            <a href="javascript:void(0);">Virus components</a>
+            <ul class="dropdown-menu">
+                <li><a href="#">RNA</a></li>
+                <li><a href="#">Spike</a></li>
+                <li><a href="#">RDRP</a></li>
+            </ul>
+        </li>
+        <li><a href="evolution.html">Evolution</a></li>
+        <li><a href="characteristics.html">Characteristics</a></li>
+        <li><a href="links.html">Useful links</a></li>
+        <li><a href="donation.html">Donations</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 主内容区域：真实内容示例，可直接替换 -->
+<div id="main_container">
+  <div class="container">
+
+    <!-- 页面标题 (可根据实际页面修改) -->
+    <div class="page-header">
+      <h1>SARS-CoV-2 Evolutionary Dynamics</h1>
+      <p>Comprehensive tracking of viral evolution, variant emergence, and global spread through high-resolution genomic epidemiology.</p>
+    </div>
+
+    <!-- 文本内容区块 -->
+    <div class="text-block">
+      <h2>Understanding the Evolutionary Trajectory</h2>
+      <p>Since its emergence in late 2019, SARS-CoV-2 has accumulated numerous mutations across its genome. Key variants such as Alpha, Delta, and Omicron have successively dominated global transmission, driven by changes in transmissibility, immune evasion, and virulence. The Deep Evolution Tracing System integrates time-calibrated phylogenetic trees, mutational signatures, and epidemiological metadata to provide a detailed view of these evolutionary events.</p>
+      <p>Our platform leverages daily updated sequences from GISAID and NCBI, enabling near real-time tracking of emerging lineages. Researchers can explore clade dynamics, mutation frequencies, and lineage replacement patterns across different geographical regions and time windows.</p>
+    </div>
+
+    <!-- 图表/可视化区块示例 (可替换为实际图表) -->
+    <div class="visualization-block">
+      <h3>📈 Phylogenetic Tree Overview</h3>
+      <div class="viz-placeholder">
+        <svg width="100%" height="200" viewBox="0 0 800 200" preserveAspectRatio="none" style="max-width: 100%;">
+          <path d="M50,100 L150,100 M150,100 L150,50 L250,50 M150,100 L150,150 L250,150 M250,50 L350,50 M250,150 L350,150 M350,50 L400,30 L450,50 M350,150 L400,170 L450,150" stroke="#2c6e8f" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <circle cx="400" cy="30" r="5" fill="#2f9bbb"/>
+          <circle cx="400" cy="170" r="5" fill="#2f9bbb"/>
+          <text x="410" y="25" font-size="12" fill="#1f6e8c">Omicron</text>
+          <text x="410" y="175" font-size="12" fill="#1f6e8c">Delta</text>
+        </svg>
+        <p style="margin-top: 16px;">Interactive phylogenetic tree placeholder — integrate D3.js or other libraries for dynamic visualization.</p>
+      </div>
+    </div>
+
+    <!-- 数据表格示例 (替换为真实数据) -->
+    <div class="data-table-wrapper">
+      <h3>📊 Key Variants and Their Characteristics</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Variant</th><th>WHO Label</th><th>First Detected</th><th>Spike Mutations</th><th>Relative Fitness</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Alpha</td><td>Alpha</td><td>Sep 2020</td><td>N501Y, D614G</td><td>+50%</td></tr>
+          <tr><td>Delta</td><td>Delta</td><td>Oct 2020</td><td>L452R, P681R</td><td>+60%</td></tr>
+          <tr><td>Omicron BA.1</td><td>Omicron</td><td>Nov 2021</td><td>~30 mutations</td><td>+100% (immune evasion)</td></tr>
+          <tr><td>Omicron BA.5</td><td>Omicron</td><td>Mar 2022</td><td>L452R, F486V</td><td>High immune escape</td></tr>
+          <tr><td>JN.1</td><td>Omicron</td><td>Sep 2023</td><td>L455S, F456L</td><td>Enhanced transmissibility</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 12px; font-size: 0.9rem; color: #4f7e9a;">Data compiled from GISAID and published literature. Replace with your own dataset as needed.</p>
+    </div>
+
+    <!-- 卡片网格 (资源/工具) -->
+    <div class="cards-grid">
+      <div class="info-card">
+        <h4><span class="card-icon">🧬</span> Mutation Tracker</h4>
+        <p>Monitor lineage-defining mutations across time and geography. Explore interactive heatmaps and frequency plots.</p>
+        <a href="#" class="more-link">Launch tool →</a>
+      </div>
+      <div class="info-card">
+        <h4><span class="card-icon">🌍</span> Global Phylogeny</h4>
+        <p>View time-resolved phylogenetic trees with geographic annotations. Filter by date, region, and lineage.</p>
+        <a href="#" class="more-link">Explore trees →</a>
+      </div>
+      <div class="info-card">
+        <h4><span class="card-icon">📥</span> Data Downloads</h4>
+        <p>Access curated sequence alignments, metadata tables, and tree files for downstream analysis.</p>
+        <a href="#" class="more-link">Download →</a>
+      </div>
+    </div>
+
+    <!-- 脚注/参考文献区块 -->
+    <div class="footnote-block">
+      <h4>📚 References & Acknowledgements</h4>
+      <ul>
+        <li>GISAID: Global Initiative on Sharing All Influenza Data — <a href="#" style="color:#1b6c8a;">acknowledgement</a></li>
+        <li>Nextstrain: Real-time tracking of pathogen evolution</li>
+        <li>Our research: <em>Deep Evolution Tracing System v2.0</em> — manuscript under review</li>
+      </ul>
+      <p style="margin-top: 12px;">For detailed methodology, please refer to the <a href="#" style="color:#1b6c8a;">documentation</a>.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- footer 区域 -->
+<div id="footer_container">
+  <div class="container footer-content">
+    <div class="copyright">
+      © 2026 Deep Evolution Tracing System (DEST) — SARS-CoV-2 Genomic Observatory
+    </div>
+    <div class="footer-links">
+      <a href="#">Contact</a>
+      <a href="#">Data policy</a>
+      <a href="#">API access</a>
+      <a href="#">GitHub</a>
+    </div>
+  </div>
+</div>
+
+<!-- 移动端下拉菜单交互 (保持原有功能) -->
+<script>
+  (function() {
+    const taxonomyLi = document.getElementById('taxonomy-item');
+    if (!taxonomyLi) return;
+    let isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    let isMobileView = window.matchMedia("(max-width: 780px)").matches;
+    if (isTouchDevice || isMobileView) {
+      taxonomyLi.addEventListener('click', function(e) {
+        if (e.target.tagName === 'A' || e.target === taxonomyLi || e.target.parentElement === taxonomyLi) {
+          e.preventDefault();
+          taxonomyLi.classList.toggle('active');
+        }
+      });
+    }
+    document.addEventListener('click', function(e) {
+      if (taxonomyLi.classList.contains('active') && !taxonomyLi.contains(e.target)) {
+        taxonomyLi.classList.remove('active');
+      }
+    });
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 780 && taxonomyLi.classList.contains('active')) {
+        taxonomyLi.classList.remove('active');
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>
