@@ -24,24 +24,45 @@
       <p>Our platform leverages daily updated sequences from GISAID and NCBI, enabling near real-time tracking of emerging lineages. Researchers can explore clade dynamics, mutation frequencies, and lineage replacement patterns across different geographical regions and time windows.</p>
     </div>
 
+    <div class="text-block">
+      <h2>About deLemus</h2>
+      <p>The dynamic epidemiology of COVID-19 has been driven by the continuous evolution of SARS-CoV-2. Variants and subvariants emerge with novel mutations that fine-tune viral fitness and sustain global circulation. deLemus focuses on monitoring these evolutionary trajectories and identifying leading spike mutations that can signal upcoming shifts in dominant lineages.</p>
+      <p>By applying low-rank tensor decomposition and epistatic correlation analysis to reported sequence data, deLemus outlines leading mutations on a monthly basis and supports early warning for variant evolution.</p>
+    </div>
+
+    <div class="visualization-block">
+      <h3>Spike Glycoprotein Domains</h3>
+      <div class="viz-placeholder">
+        <img src="deLemus/assets/img/about/Domains.png" alt="Subunits and Domains of the Spike" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
+      </div>
+    </div>
+
     <div class="visualization-block">
       <h3>📈 Phylogenetic Tree Overview</h3>
       <div class="viz-placeholder">
-        <svg width="100%" height="200" viewBox="0 0 800 200" preserveAspectRatio="none" style="max-width: 100%;">
-          <path d="M50,100 L150,100 M150,100 L150,50 L250,50 M150,100 L150,150 L250,150 M250,50 L350,50 M250,150 L350,150 M350,50 L400,30 L450,50 M350,150 L400,170 L450,150" stroke="#2c6e8f" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <circle cx="400" cy="30" r="5" fill="#2f9bbb"/>
-          <circle cx="400" cy="170" r="5" fill="#2f9bbb"/>
-          <text x="410" y="25" font-size="12" fill="#1f6e8c">Omicron</text>
-          <text x="410" y="175" font-size="12" fill="#1f6e8c">Delta</text>
-        </svg>
-        <p style="margin-top: 16px;">Interactive phylogenetic tree placeholder — integrate D3.js or other libraries for dynamic visualization.</p>
+        <img src="deLemus/assets/img/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;" />
+        <img src="deLemus/assets/img/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
       </div>
     </div>
 
     <div class="visualization-block">
       <h3>Global Evolution Snapshot</h3>
       <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+        <iframe
+          src="https://nextstrain.org/ncov/gisaid/global?embed=true"
+          title="Nextstrain SARS-CoV-2 Global"
+          width="100%"
+          height="700"
+          style="border: 0; border-radius: 12px; background: #ffffff;"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+        <p style="margin-top: 14px; font-size: 0.95rem; color: #2f556b;">
+          If the interactive panel does not load in your browser, open directly:
+          <a href="https://nextstrain.org/ncov/gisaid/global" target="_blank" rel="noopener noreferrer">Nextstrain Global</a> |
+          <a href="https://www.who.int/activities/tracking-SARS-CoV-2-variants" target="_blank" rel="noopener noreferrer">WHO Variant Tracking</a> |
+          <a href="https://ourworldindata.org/covid-cases" target="_blank" rel="noopener noreferrer">Our World in Data</a>
+        </p>
       </div>
     </div>
 
@@ -57,6 +78,9 @@
           <tr><td>Omicron BA.1</td><td>Omicron</td><td>Nov 2021</td><td>~30 mutations</td><td>+100%</td></tr>
           <tr><td>Omicron BA.5</td><td>Omicron</td><td>Mar 2022</td><td>L452R, F486V</td><td>High immune escape</td></tr>
           <tr><td>JN.1</td><td>Omicron</td><td>Sep 2023</td><td>L455S, F456L</td><td>Enhanced transmissibility</td></tr>
+          <tr><td>KP.2</td><td>VUM</td><td>2024</td><td>R346T, F456L, V1104L</td><td>Monitored descendant of JN.1</td></tr>
+          <tr><td>KP.3</td><td>Omicron lineage</td><td>2024</td><td>S31 deletion profile (lineage-related)</td><td>Lineage with monitored descendants</td></tr>
+          <tr><td>XFG</td><td>VUM (latest WHO)</td><td>2025</td><td>R346T, K444R, V445R, F456L, N487D, Q493E</td><td>Newest VUM listed by WHO (23 Feb 2026 update)</td></tr>
         </tbody>
       </table>
     </div>
@@ -79,28 +103,28 @@
       <div class="info-card">
         <h4><span class="card-icon">🧬</span> Mutation Tracker</h4>
         <p>Monitor lineage-defining mutations across time and geography. Explore interactive heatmaps and frequency plots.</p>
-        <a href="#" class="more-link">Launch tool →</a>
+        <a href="https://outbreak.info/" class="more-link" target="_blank" rel="noopener noreferrer">Launch tool →</a>
       </div>
       <div class="info-card">
         <h4><span class="card-icon">🌍</span> Global Phylogeny</h4>
         <p>View time-resolved phylogenetic trees with geographic annotations. Filter by date, region, and lineage.</p>
-        <a href="#" class="more-link">Explore trees →</a>
+        <a href="https://nextstrain.org/ncov/gisaid/global" class="more-link" target="_blank" rel="noopener noreferrer">Explore trees →</a>
       </div>
       <div class="info-card">
         <h4><span class="card-icon">📥</span> Data Downloads</h4>
         <p>Access curated sequence alignments, metadata tables, and tree files for downstream analysis.</p>
-        <a href="#" class="more-link">Download →</a>
+        <a href="https://github.com/japhertjpeg/DETS" class="more-link" target="_blank" rel="noopener noreferrer">Download →</a>
       </div>
     </div>
 
     <div class="footnote-block">
       <h4>📚 References & Acknowledgements</h4>
       <ul>
-        <li>GISAID: Global Initiative on Sharing All Influenza Data — <a href="#" style="color:#1b6c8a;">acknowledgement</a></li>
+        <li>GISAID: Global Initiative on Sharing All Influenza Data — <a href="https://gisaid.org/" style="color:#1b6c8a;" target="_blank" rel="noopener noreferrer">acknowledgement</a></li>
         <li>Nextstrain: Real-time tracking of pathogen evolution</li>
         <li>Our research: <em>Deep Evolution Tracing System v2.0</em> — manuscript under review</li>
       </ul>
-      <p style="margin-top: 12px;">For detailed methodology, please refer to the <a href="#" style="color:#1b6c8a;">documentation</a>.</p>
+      <p style="margin-top: 12px;">For detailed methodology, please refer to the <a href="https://github.com/japhertjpeg/DETS#readme" style="color:#1b6c8a;" target="_blank" rel="noopener noreferrer">documentation</a>.</p>
     </div>
   </div>
 </div>
