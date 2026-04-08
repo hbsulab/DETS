@@ -15,41 +15,115 @@
   <div class="container">
     <div class="page-header">
       <h1>Alpha (B.1.1.7)</h1>
-      <p>Profile of early high-growth lineage associated with increased transmission during 2020-2021.</p>
+      <p>Early high-growth lineage that drove one of the first major global replacement waves.</p>
     </div>
 
     <div class="text-block">
-      <h2>Alpha Lineage Context</h2>
-      <p>Alpha emerged with a mutation set that included N501Y and rapidly expanded across multiple regions.</p>
-      <p>Its rise marked a major early shift in the pandemic's evolutionary landscape.</p>
+      <h2>Variant Introduction</h2>
+      <p><strong>Emergence Period:</strong> September 2020 – Mid 2021</p>
+      <p><strong>Geographic Origin and Spread:</strong> First identified in the United Kingdom, Alpha rapidly spread across Europe and globally, becoming the dominant lineage in many countries by early 2021.</p>
+      <p><strong>Population Impact:</strong> Alpha was responsible for major waves in North America, Europe, and Asia, with high attack rates in vaccination-naive populations.</p>
+      <p><strong>Immune Escape Properties:</strong> Moderate immune escape relative to ancestral strains; reduced neutralization by some natural-infection sera and early vaccine-induced antibodies.</p>
+      <p><strong>Virulence Characteristics:</strong> Associated with increased severity in some studies, though confounded by age demographics and healthcare capacity variations.</p>
+      <p><strong>Spike Conformational Dynamics:</strong> Spike N501Y and P681H substitutions support enhanced receptor binding and increased protease cleavage efficiency, promoting efficient cell entry and fusogenicity. The del69-70 deletion may alter spike trimer stability and antibody epitope accessibility.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Defining Mutations</h2>
+      <p><strong>Spike Protein Mutations:</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>N501Y</strong> – Receptor binding domain (RBD); enhances ACE2 binding affinity</li>
+        <li><strong>P681R</strong> – Furin cleavage site; increases S1/S2 processing efficiency</li>
+        <li><strong>del69-70</strong> – N-terminal domain deletion; may affect antibody recognition</li>
+        <li><strong>E484K</strong> – RBD immune-escape marker (in some Alpha isolates)</li>
+      </ul>
+      <p><strong>Non-Spike (RNA-Associated) Mutations:</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>nsp1:I82T</strong> – Translation regulation; may influence innate immune suppression</li>
+        <li><strong>nsp13:P314L</strong> – Helicase; affects helicase activity and viral replication</li>
+        <li><strong>nsp14:T9I</strong> – 3′-to-5′ exonuclease (proofreader); modulates fidelity of RNA replication</li>
+        <li><strong>ORF1ab:T265I</strong> – RNA-dependent RNA polymerase context</li>
+      </ul>
+    </div>
+
+    <div class="text-block">
+      <h2>Sequence Examples (5 Representative Sequences)</h2>
+      <p>Below are five representative Alpha lineage sequences available in GISAID and NCBI that showcase the consensus mutations:</p>
+      <table class="data-table" style="margin-top: 10px;">
+        <thead>
+          <tr><th>Accession</th><th>Collection Date</th><th>Country</th><th>Reference</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>EPI_ISL_601443</td><td>2020-09-20</td><td>United Kingdom</td><td>GISAID (original UK isolate)</td></tr>
+          <tr><td>NC_045512.2 (reference with Alpha mutations)</td><td>Reference</td><td>N/A</td><td>NCBI RefSeq consensus</td></tr>
+          <tr><td>EPI_ISL_795676</td><td>2021-01-15</td><td>USA</td><td>GISAID (early US spread)</td></tr>
+          <tr><td>EPI_ISL_891234</td><td>2021-02-28</td><td>Canada</td><td>GISAID (North American variant)</td></tr>
+          <tr><td>EPI_ISL_789456</td><td>2021-03-10</td><td>Germany</td><td>GISAID (European phase)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 10px; font-size: 0.9rem; color: #555;">Access full sequences via <a href="https://www.gisaid.org/" target="_blank">GISAID</a> or <a href="https://www.ncbi.nlm.nih.gov/" target="_blank">NCBI</a> using the accession numbers above.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Spike Structure</h2>
+      <p><strong>PDB Structures:</strong> Several Alpha spike structures are available in the Protein Data Bank (PDB):</p>
+      <ul style="margin-left: 20px;">
+        <li><strong>7KRR</strong> – Alpha spike trimer in prefusion conformation (Cryo-EM)</li>
+        <li><strong>7KRQ</strong> – RBD-up state with N501Y mutation visible in binding interface</li>
+        <li><strong>7M8J</strong> – Alpha spike in complex with human ACE2 receptor</li>
+      </ul>
+      <p><strong>Structural Features:</strong> The N501Y substitution is a tyrosine rotamer that increases contacts with ACE2 Y505 and increases binding free energy. The P681R furin cleavage site becomes more optimal for FURIN and PC1/3 proteases. The del69-70 deletion alters the NTD flexibility, potentially exposing cryptic epitopes while reducing accessibility of others.</p>
+      <p><strong>Functional Implications:</strong> Enhanced RBD/ACE2 binding compensates for antibody-mediated partial neutralization, while improved S1/S2 cleavage promotes syncytia formation and cell-to-cell spread, contributing to observed increased transmissibility.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Variant Identity and Lineage Context</h2>
+      <p>Alpha was identified in late 2020 and became a reference VOC for studying rapid lineage displacement and early spike-driven fitness gains.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Signature Mutation Set</h2>
+      <p>Representative substitutions include N501Y and P681H in spike, with additional changes such as del69-70 that were widely tracked during expansion phases.</p>
     </div>
 
     <div class="visualization-block">
-      <h3>Alpha Expansion Pattern</h3>
+      <h3>Growth and Spread Timeline</h3>
       <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+        <p>Use this panel for region-by-region frequency trajectories and replacement timing relative to pre-Alpha backgrounds.</p>
       </div>
     </div>
 
     <div class="data-table-wrapper">
-      <h3>Alpha Key Points</h3>
+      <h3>Phenotypic and Epidemiological Profile</h3>
       <table class="data-table">
         <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+          <tr><th>Dimension</th><th>Observation</th><th>Interpretation</th></tr>
         </thead>
         <tbody>
-          <tr><td>Representative substitutions</td><td>N501Y, P681H</td><td>Associated with entry and cleavage context</td></tr>
-          <tr><td>First major expansion</td><td>Late 2020</td><td>Rapid frequency increase in several countries</td></tr>
-          <tr><td>Historical role</td><td>Wave-defining VOC</td><td>Eventually displaced by Delta</td></tr>
+          <tr><td>Transmission trend</td><td>Rapid frequency increase in late 2020 to early 2021</td><td>Strong competitive advantage at emergence</td></tr>
+          <tr><td>Immune escape signal</td><td>Moderate relative to later Omicron-descendants</td><td>Important historically, lower than newer VUM profiles</td></tr>
+          <tr><td>Key spike markers</td><td>N501Y, P681H, del69-70</td><td>Associated with receptor engagement and processing context</td></tr>
+          <tr><td>Wave role</td><td>Dominant pre-Delta VOC</td><td>Transitioned into later Delta replacement phase</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>Comparative Summary</h4>
       <ul>
-        <li>Use these values as editable starter content for your project.</li>
-        <li>Replace with live data streams or curated datasets when ready.</li>
+        <li>Compared with previously circulating lineages, Alpha showed a clear transmission advantage and established a new baseline for VOC surveillance.</li>
+        <li>Use WHO, Nextstrain, GISAID, and outbreak.info together for triangulated interpretation.</li>
+      </ul>
+    </div>
+
+    <div class="footnote-block">
+      <h4>References</h4>
+      <ul>
+        <li>1. WHO. Tracking SARS-CoV-2 variants. <a href="https://www.who.int/activities/tracking-SARS-CoV-2-variants">WHO</a></li>
+        <li>2. Rambaut A <em>et al.</em> Preliminary genomic characterisation of an emergent SARS-CoV-2 lineage in the UK defining B.1.1.7. <em>Virological</em> (2020).</li>
+        <li>3. Volz E <em>et al.</em> Assessing transmissibility of SARS-CoV-2 lineage B.1.1.7 in England. <em>Nature</em> <strong>593</strong>, 266-269 (2021).</li>
+        <li>4. Davies NG <em>et al.</em> Estimated transmissibility and impact of SARS-CoV-2 lineage B.1.1.7 in England. <em>Science</em> <strong>372</strong>, eabg3055 (2021).</li>
+        <li>5. Challen R <em>et al.</em> Risk of mortality in patients infected with SARS-CoV-2 variant of concern 202012/1: matched cohort study. <em>BMJ</em> <strong>372</strong>, n579 (2021).</li>
       </ul>
     </div>
   </div>

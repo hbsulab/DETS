@@ -15,41 +15,42 @@
   <div class="container">
     <div class="page-header">
       <h1>Viral RNA</h1>
-      <p>Genome-level perspective on RNA organization, replication, and mutational distribution.</p>
+      <p>Genome-level view of RNA architecture, replication logic, and mutation flow across SARS-CoV-2 evolution.</p>
     </div>
 
     <div class="text-block">
-      <h2>RNA Component Context</h2>
-      <p>This page focuses on the SARS-CoV-2 RNA backbone, where substitutions can affect replication and downstream protein coding.</p>
-      <p>It is useful for mapping where mutations cluster across ORFs and non-coding regions.</p>
+      <h2>Genome Organization</h2>
+      <p>SARS-CoV-2 carries a positive-sense single-stranded RNA genome that includes ORF1ab, structural genes (S, E, M, N), accessory regions, and untranslated regions. This organization supports both immediate translation and downstream replication-transcription programs.</p>
+      <p>Tracking where substitutions accumulate across coding and non-coding regions helps separate conserved loci from rapidly adapting regions under host and transmission pressures.</p>
     </div>
 
     <div class="visualization-block">
-      <h3>RNA Genome Overview</h3>
+      <h3>Replication-Transcription Context</h3>
       <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+        <p>Use this panel for a genome map, mutation-density track, and time-resolved substitution accumulation chart by ORF and region.</p>
       </div>
     </div>
 
     <div class="data-table-wrapper">
-      <h3>RNA Component Metrics</h3>
+      <h3>RNA Analysis Framework</h3>
       <table class="data-table">
         <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+          <tr><th>Module</th><th>What to Track</th><th>Why It Matters</th></tr>
         </thead>
         <tbody>
-          <tr><td>Genome architecture</td><td>Single-stranded RNA</td><td>Includes coding and untranslated regions</td></tr>
-          <tr><td>Monitoring target</td><td>Nucleotide substitutions</td><td>Track both synonymous and non-synonymous patterns</td></tr>
-          <tr><td>Interpretation</td><td>Region-aware</td><td>Different loci have different functional constraints</td></tr>
+          <tr><td>Genome architecture</td><td>ORF boundaries, UTRs, structural and accessory genes</td><td>Provides region-aware interpretation baseline</td></tr>
+          <tr><td>Mutation characterization</td><td>Synonymous vs non-synonymous changes, indels</td><td>Distinguishes drift from potentially functional shifts</td></tr>
+          <tr><td>Temporal dynamics</td><td>Monthly frequency trajectories by locus</td><td>Links molecular change to lineage emergence timing</td></tr>
+          <tr><td>Surveillance integration</td><td>RNA changes with lineage metadata</td><td>Improves evolutionary signal attribution</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>Interpretation Notes</h4>
       <ul>
-        <li>Use these values as editable starter content for your project.</li>
-        <li>Replace with live data streams or curated datasets when ready.</li>
+        <li>RNA-level analysis is strongest when paired with lineage prevalence and protein-domain context.</li>
+        <li>Use Evolution and Spike pages alongside this page for multi-layer interpretation.</li>
       </ul>
     </div>
   </div>

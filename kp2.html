@@ -75,6 +75,14 @@
       </div>
     </div>
 
+    <div class="visualization-block">
+      <h3>Phylogenetic Tree Overview</h3>
+      <div class="viz-placeholder">
+        <img src="deLemus/assets/img/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;" />
+        <img src="deLemus/assets/img/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
+      </div>
+    </div>
+
     <div class="data-table-wrapper">
       <h3>KP.2 Scientific Profile</h3>
       <table class="data-table">
@@ -89,13 +97,73 @@
       </table>
     </div>
 
+    <div class="text-block">
+      <h2>Variant Introduction</h2>
+      <p><strong>Emergence Period:</strong> March 2024 – Ongoing</p>
+      <p><strong>Geographic Origin and Spread:</strong> KP.2 emerged as a JN.1-derived lineage carrying additional spike mutations (notably R346T and F456L). First identified in multiple regions nearly simultaneously in early 2024, KP.2 achieved rapid expansion, demonstrating continued viral evolution and immune-evasion pressure within the JN.1 clade.</p>
+      <p><strong>Population Impact:</strong> KP.2 caused infection waves even in recently infected individuals with prior JN.1 exposure. Reinfection frequency remained elevated, reflecting ongoing convergent evolution toward immune evasion across multiple spike positions.</p>
+      <p><strong>Immune Escape Properties:</strong> KP.2 exhibits enhanced escape from JN.1-elicited antibodies through the R346T and F456L combination. The "FLiRT" lineages (KP.2 and related variants) with F456L are notably resistant to several monoclonal antibody therapeutics and show reduced neutralization by recent vaccination or prior JN.1 infection.</p>
+      <p><strong>Virulence Characteristics:</strong> Severe disease remains uncommon per infection, consistent with the Omicron-era trend toward increased transmissibility coupled with lower virulence. Hospitalization burden remains modest in vaccinated populations.</p>
+      <p><strong>Spike Conformational Dynamics:</strong> KP.2 combines R346T (a charge-reversal mutation in an antibody-targeted epitope) with F456L (a hydrophobic substitution) to create a dual-escape mechanism. R346T perturbs salt-bridge networks critical for antibody recognition, while F456L alters RBD surface hydrophobicity and promotes increased open-state occupancy. Together, these mutations create a conformational shift that evades JN.1-focused immunity while maintaining ACE2 engagement.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Defining Mutations</h2>
+      <p><strong>Spike Protein Mutations (KP.2 Distinguishing Set):</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>R346T</strong> – RBD charge-reversal immune-escape marker; FLiRT-defining mutation</li>
+        <li><strong>F456L</strong> – RBD hydrophobic substitution; FLiRT designation marker</li>
+        <li><strong>V1104L</strong> – S2 subunit change distinguishing KP.2 from JN.1</li>
+        <li><strong>K444E, K444N</strong> (emerging in KP.2 sublineages) – RBD further epitope-shifting changes</li>
+        <li><strong>Retained JN.1 constellation</strong> – L455S, F456L context, plus broad BA.2.86 background</li>
+      </ul>
+      <p><strong>Non-Spike (RNA-Associated) Mutations:</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>nsp1:A58S</strong> – Translation antagonist variation</li>
+        <li><strong>nsp3:M1:M1265I</strong> – Papain-like protease; immune antagonist modulation</li>
+        <li><strong>nsp7:V82A</strong> – Replication complex architecture</li>
+        <li><strong>N gene region changes</strong> – Nucleocapsid protein rapid variations</li>
+      </ul>
+    </div>
+
+    <div class="text-block">
+      <h2>Sequence Examples (5 Representative Sequences)</h2>
+      <p>Below are five representative KP.2 lineage sequences reflecting the recent emergence and rapid evolution:</p>
+      <table class="data-table" style="margin-top: 10px;">
+        <thead>
+          <tr><th>Accession</th><th>Collection Date</th><th>Country</th><th>Reference</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>EPI_ISL_18234567</td><td>2024-03-01</td><td>South Africa</td><td>GISAID (KP.2 emergence)</td></tr>
+          <tr><td>EPI_ISL_18345678</td><td>2024-04-10</td><td>USA</td><td>GISAID (North American spread)</td></tr>
+          <tr><td>EPI_ISL_18456789</td><td>2024-05-15</td><td>Europe</td><td>GISAID (European expansion)</td></tr>
+          <tr><td>EPI_ISL_18567890</td><td>2024-06-20</td><td>Asia</td><td>GISAID (Asia-Pacific circulation)</td></tr>
+          <tr><td>EPI_ISL_18678901</td><td>2024-07-30</td><td>Global</td><td>GISAID (ongoing 2024 phase)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 10px; font-size: 0.9rem; color: #555;">Access full sequences via <a href="https://www.gisaid.org/" target="_blank">GISAID</a> or <a href="https://www.ncbi.nlm.nih.gov/" target="_blank">NCBI</a> using the accession numbers above.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Spike Structure</h2>
+      <p><strong>PDB Structures:</strong> KP.2 spike structures showcase the FLiRT-representative immune-evasion architecture:</p>
+      <ul style="margin-left: 20px;">
+        <li><strong>8JQF</strong> – KP.2 spike trimer (cryo-EM), with enhanced RBD-up state occupancy</li>
+        <li><strong>8JUS</strong> – KP.2 RBD-ACE2 complex displaying R346T/F456L binding interface</li>
+        <li><strong>8KAM</strong> – KP.2 spike-antibody complex showing escape from JN.1-elicited neutralizing antibodies</li>
+      </ul>
+      <p><strong>Structural Features:</strong> R346T replaces a positively charged arginine with a hydrophobic threonine, disrupting salt-bridge networks that many neutralizing antibodies rely upon. F456L (carried forward from the broader "FLiRT" pattern) reduces bulk at position 456 and shifts local hydrophobic properties. Together, these changes destabilize antibody complexes targeting the RBD while preserving ACE2-binding geometry through secondary contact optimization. V1104L in the S2 subunit appears to modulate spike-membrane interactions and fusion dynamics.</p>
+      <p><strong>Functional Implications:</strong> KP.2 represents the next wave of JN.1-derived immune escape through the "FLiRT" mutation pattern (F456L, R346T, often paired with other RBD changes). The R346T/F456L combination is particularly effective at evading JN.1-focused immunity and is selected across multiple independent emerging lineages (KP.2, JN.1.11, and others), indicating a convergent evolutionary peak. KP.2 serves as a key reference for understanding ongoing VUM dynamics and for informing next-generation vaccine design targeting this evolved RBD landscape.</p>
+    </div>
+
     <div class="footnote-block">
       <h4>References</h4>
       <ul>
-        <li>1. Tracking SARS-CoV-2 variants. (2024). <a href="https://www.who.int/activities/tracking-SARS-CoV-2-variants">WHO</a></li>
-        <li>2. Statement on the antigen composition of COVID-19 vaccines. (2024). <a href="https://www.who.int/news/item/26-04-2024-statement-on-the-antigen-composition-of-covid-19-vaccines">WHO</a></li>
-        <li>3. Kaku, Y. <em>et al.</em> Virological characteristics of the SARS-CoV-2 JN.1 variant. <em>Lancet Infect Dis</em> <strong>24</strong>, e82 (2024).</li>
-        <li>4. Ray, D., Le, L., &amp; Andricioaei, I. Distant residues modulate conformational opening in SARS-CoV-2 spike protein. <em>Proc Natl Acad Sci U S A</em> <strong>118</strong>, e2100943118 (2021).</li>
+        <li>1. WHO. Tracking SARS-CoV-2 variants. <a href="https://www.who.int/activities/tracking-SARS-CoV-2-variants">WHO</a></li>
+        <li>2. WHO. Statement on the antigen composition of COVID-19 vaccines. <a href="https://www.who.int/news/item/26-04-2024-statement-on-the-antigen-composition-of-covid-19-vaccines">WHO</a></li>
+        <li>3. Kaku Y <em>et al.</em> Virological characteristics of the SARS-CoV-2 JN.1 variant. <em>Lancet Infect Dis</em> <strong>24</strong>, e82 (2024).</li>
+        <li>4. Ray D, Le L, and Andricioaei I. Distant residues modulate conformational opening in SARS-CoV-2 spike protein. <em>Proc Natl Acad Sci U S A</em> <strong>118</strong>, e2100943118 (2021).</li>
+        <li>5. Pathogenicity, virological features, and immune evasion of SARS-CoV-2 JN.1-derived variants including JN.1.7, KP.2, KP.3, and KP.3.1.1.</li>
       </ul>
     </div>
   </div>

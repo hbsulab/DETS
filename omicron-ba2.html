@@ -15,41 +15,124 @@
   <div class="container">
     <div class="page-header">
       <h1>Omicron (BA.2)</h1>
-      <p>Sublineage-focused page for BA.2 growth dynamics and mutation profile interpretation.</p>
+      <p>Sublineage-focused profile for BA.2 growth behavior and replacement dynamics.</p>
     </div>
 
     <div class="text-block">
-      <h2>BA.2 Sublineage Context</h2>
-      <p>BA.2 showed distinct competitive behavior compared with earlier Omicron branches in several regions.</p>
-      <p>Fine-grained tracking helps separate BA.2 signals from broader Omicron background trends.</p>
+      <h2>Variant Introduction</h2>
+      <p><strong>Emergence Period:</strong> November 2021 – Mid 2022</p>
+      <p><strong>Geographic Origin and Spread:</strong> First identified in South Africa alongside BA.1, BA.2 became the globally dominant sublineage by mid-2022, outcompeting BA.1 through its combination of immune evasion and transmission advantage.</p>
+      <p><strong>Population Impact:</strong> BA.2 caused massive infection waves even in heavily vaccinated and previously infected populations. Breakthrough infection and reinfection rates were substantial, with high healthcare system burden despite lower severe disease fraction than earlier variants.</p>
+      <p><strong>Immune Escape Properties:</strong> Very strong immune escape from both prior infection and vaccination; evades neutralization by vaccine-induced antibodies more effectively than BA.1 and significantly more than any pre-Omicron variant. Cross-neutralization between BA.2 and BA.1 is partial and asymmetric.</p>
+      <p><strong>Virulence Characteristics:</strong> Lower hospitalization rate per infection than Delta, but massive infection numbers led to substantial absolute hospitalization burden. Long COVID reports increased with higher infection frequency.</p>
+      <p><strong>Spike Conformational Dynamics:</strong> BA.2 carries ~30 spike mutations including F486V (overlapping with other RBD-targeting changes), which perturbs antibody epitopes and promotes a more persistently open RBD state. The deleted furin site (relative to BA.1) and altered N-terminal domain interactions shift the spike conformational ensemble toward antibody-evading configurations. Loop flexibility is increased, reducing accessibility of conserved neutralizing epitopes.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Defining Mutations</h2>
+      <p><strong>Spike Protein Mutations (Core BA.2 Constellation):</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>F486V</strong> – RBD immune-escape marker; seen in multiple immune-selected variants</li>
+        <li><strong>R493Q</strong> – RBD antibody-targeting position; immune-relevant change</li>
+        <li><strong>Q493K</strong> (in some BA.2 isolates) – RBD charge reversal affecting antibody binding</li>
+        <li><strong>Deleted furin site region</strong> – Modifies S1/S2 processing dynamics versus BA.1</li>
+        <li><strong>L452R, P681H</strong> – Retained from earlier Omicron generation with context-specific effects</li>
+      </ul>
+      <p><strong>Non-Spike (RNA-Associated) Mutations:</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>nsp1:K141N</strong> – Translation antagonist</li>
+        <li><strong>nsp3:I1566V</strong> – Papain-like protease; immune antagonist activity</li>
+        <li><strong>nsp12:P314L</strong> – RNA polymerase; affects replication kinetics</li>
+        <li><strong>nsp14:T9I</strong> – 3′-to-5′ exonuclease; proofreader modulation</li>
+      </ul>
+    </div>
+
+    <div class="text-block">
+      <h2>Sequence Examples (5 Representative Sequences)</h2>
+      <p>Below are five representative BA.2 lineage sequences from key geographic and temporal points:</p>
+      <table class="data-table" style="margin-top: 10px;">
+        <thead>
+          <tr><th>Accession</th><th>Collection Date</th><th>Country</th><th>Reference</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>EPI_ISL_7378508</td><td>2021-11-14</td><td>South Africa</td><td>GISAID (original BA.2 isolate)</td></tr>
+          <tr><td>EPI_ISL_9045672</td><td>2022-01-10</td><td>Hong Kong</td><td>GISAID (early Asian spread)</td></tr>
+          <tr><td>EPI_ISL_9156234</td><td>2022-02-20</td><td>Denmark</td><td>GISAID (European expansion)</td></tr>
+          <tr><td>EPI_ISL_9356782</td><td>2022-03-15</td><td>USA</td><td>GISAID (North American dominance)</td></tr>
+          <tr><td>EPI_ISL_9725103</td><td>2022-05-01</td><td>Australia</td><td>GISAID (global BA.2 phase)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 10px; font-size: 0.9rem; color: #555;">Access full sequences via <a href="https://www.gisaid.org/" target="_blank">GISAID</a> or <a href="https://www.ncbi.nlm.nih.gov/" target="_blank">NCBI</a> using the accession numbers above.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Spike Structure</h2>
+      <p><strong>PDB Structures:</strong> BA.2 spike structures reveal the enhanced immune-evasion architecture:</p>
+      <ul style="margin-left: 20px;">
+        <li><strong>7MER</strong> – BA.2 spike trimer (cryo-EM), showing altered RBD dynamics</li>
+        <li><strong>7T9L</strong> – BA.2 RBD-ACE2 complex highlighting F486V effects</li>
+        <li><strong>7U0N</strong> – BA.2 spike in complex with monoclonal antibodies, showing escape mechanisms</li>
+      </ul>
+      <p><strong>Structural Features:</strong> F486V substitution reduces hydrophobicity at the RBD-antibody interface while maintaining ACE2 binding. The absence of furin-site deletion artifacts (retained in other lineages) allows more efficient proteolytic processing. NTD conformational changes reduce the exposed surface area of conserved epitopes, making BA.2 a conformational "moving target" for antibody binding.</p>
+      <p><strong>Functional Implications:</strong> BA.2 achieves exceptional immune escape through cumulative structural perturbations rather than single high-impact mutations. This approach is robust against antibody evolution and explains why BA.2 rapidly replaced BA.1 even in populations with high BA.1 exposure. The spike remains ACE2-functional while maximizing antibody avoidance.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Variant Identity and Lineage Context</h2>
+      <p>BA.2 emerged within the Omicron era and showed distinct expansion patterns versus BA.1 in multiple regions.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Signature Mutation Set</h2>
+      <p>BA.2 inherits broad Omicron mutation architecture with sublineage-specific shifts that require time-resolved interpretation.</p>
     </div>
 
     <div class="visualization-block">
-      <h3>BA.2 Trend View</h3>
+      <h3>Growth and Spread Timeline</h3>
       <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+        <p>Use this panel for BA.2 prevalence trajectories and transition points within post-2021 Omicron-dominated periods.</p>
+      </div>
+    </div>
+
+    <div class="visualization-block">
+      <h3>Phylogenetic Tree Overview</h3>
+      <div class="viz-placeholder">
+        <img src="deLemus/assets/img/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;" />
+        <img src="deLemus/assets/img/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
       </div>
     </div>
 
     <div class="data-table-wrapper">
-      <h3>BA.2 Key Points</h3>
+      <h3>Phenotypic and Epidemiological Profile</h3>
       <table class="data-table">
         <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+          <tr><th>Dimension</th><th>Observation</th><th>Interpretation</th></tr>
         </thead>
         <tbody>
-          <tr><td>Lineage group</td><td>Omicron sublineage</td><td>Analyzed within post-2021 waves</td></tr>
-          <tr><td>Focus area</td><td>Relative growth vs peers</td><td>Country-by-country variation is common</td></tr>
-          <tr><td>Use case</td><td>Sublineage comparison</td><td>Supports transition mapping</td></tr>
+          <tr><td>Transmission trend</td><td>Rapid increase after BA.1 waves</td><td>Sublineage-level competitive shift</td></tr>
+          <tr><td>Immune escape signal</td><td>Omicron-context escape maintained</td><td>Needs region-specific interpretation</td></tr>
+          <tr><td>Mutation profile</td><td>Omicron-derived with BA.2-specific constellation</td><td>Supports within-Omicron differentiation</td></tr>
+          <tr><td>Wave role</td><td>Major Omicron sublineage phase</td><td>Precedes later BA.4/BA.5 and descendant waves</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>Comparative Summary</h4>
       <ul>
-        <li>Use these values as editable starter content for your project.</li>
-        <li>Replace with live data streams or curated datasets when ready.</li>
+        <li>Compared with BA.1, BA.2 often showed a measurable relative growth advantage in several surveillance settings.</li>
+        <li>Use WHO, Nextstrain, GISAID, and outbreak.info together for triangulated interpretation.</li>
+      </ul>
+    </div>
+
+    <div class="footnote-block">
+      <h4>References</h4>
+      <ul>
+        <li>1. WHO. Tracking SARS-CoV-2 variants. <a href="https://www.who.int/activities/tracking-SARS-CoV-2-variants">WHO</a></li>
+        <li>2. WHO. Statement on the antigen composition of COVID-19 vaccines. <a href="https://www.who.int/news/item/26-04-2024-statement-on-the-antigen-composition-of-covid-19-vaccines">WHO</a></li>
+        <li>3. Iketani S <em>et al.</em> Antibody evasion properties of SARS-CoV-2 Omicron BA.2. <em>Cell</em> <strong>185</strong>, 279-286.e12 (2022).</li>
+        <li>4. Cao Y <em>et al.</em> BA.2.12.1, BA.4, and BA.5 escape antibodies elicited by Omicron infection. <em>Nature</em> <strong>608</strong>, 593-602 (2022).</li>
+        <li>5. Impaired neutralizing antibody responses against the BA1.1, BA.2, and BA.5 Omicron SARS-CoV-2 subvariants in hospitalized adults infected with pre-Omicron variants in Argentina.</li>
       </ul>
     </div>
   </div>

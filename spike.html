@@ -14,33 +14,40 @@
 <div id="main_container">
   <div class="container">
     <div class="page-header">
-      <h1>Spike Protein</h1>
-      <p>Function-focused page for entry-related substitutions and immune-facing mutation hotspots.</p>
+      <h1>Spike Glycoprotein</h1>
+      <p>Integrated overview of spike structure, domain-level function, and mutation-driven SARS-CoV-2 evolution.</p>
     </div>
 
     <div class="text-block">
-      <h2>Spike Component Context</h2>
-      <p>Spike is central to receptor engagement and remains the most frequently interpreted region in variant assessments.</p>
-      <p>Changes in key domains can alter transmission dynamics and antibody recognition profiles.</p>
+      <h2>Spike Introduction</h2>
+      <p>The spike glycoprotein of SARS-CoV-2 is a trimeric type I viral fusion protein that binds the virus to the ACE2 receptor of host cells. It is composed of two major subunits, S1 and S2, which coordinate receptor engagement and membrane fusion.</p>
+      <p>The S1 region includes the N-terminal domain (NTD), receptor-binding domain (RBD), and C-terminal subdomains, while the S2 region drives fusion after receptor interaction. Because these domains govern infectivity and antigenic recognition, spike remains the primary focus for variant risk interpretation.</p>
     </div>
 
     <div class="visualization-block">
-      <h3>Spike Mutation Landscape</h3>
+      <h3>Spike Domain Architecture</h3>
       <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+        <img src="deLemus/assets/img/about/Domains.png" alt="Subunits and domains of SARS-CoV-2 spike" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;" />
+        <img src="deLemus/assets/img/about/movie3.gif" alt="Spike glycoprotein animation" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
       </div>
     </div>
 
+    <div class="text-block">
+      <h2>Spike and Ongoing Evolution</h2>
+      <p>As shown across the evolution analyses, newly expanding lineages often carry coordinated spike substitutions, especially in immune-facing sites within RBD and nearby regions. Monitoring these substitutions together with lineage prevalence is essential for early warning and interpretation.</p>
+      <p>For temporal mutation trajectories and monthly leading mutation updates, refer to the Evolution page panels (Updates and Time Course), which provide trend context for spike-associated changes.</p>
+    </div>
+
     <div class="data-table-wrapper">
-      <h3>Spike Component Metrics</h3>
+      <h3>Spike-Focused Variant Markers</h3>
       <table class="data-table">
         <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+          <tr><th>Variant / Lineage</th><th>Representative Spike Changes</th><th>Interpretation</th></tr>
         </thead>
         <tbody>
-          <tr><td>Core domains</td><td>NTD, RBD, S1/S2 interface</td><td>Common regions of interest</td></tr>
-          <tr><td>Analysis emphasis</td><td>Functional substitutions</td><td>Link sequence changes to entry/escape context</td></tr>
-          <tr><td>Practical use</td><td>Variant risk profiling</td><td>Often combined with epidemiological indicators</td></tr>
+          <tr><td>JN.1</td><td>L455S, F456L</td><td>RBD-centered changes linked with fitness and immune escape context</td></tr>
+          <tr><td>KP.2</td><td>R346T, F456L, V1104L</td><td>Descendant profile with additional spike adaptation signals</td></tr>
+          <tr><td>XFG (WHO VUM)</td><td>R346T, K444R, V445R, F456L, N487D, Q493E</td><td>Newest VUM profile with dense immune-facing substitutions</td></tr>
         </tbody>
       </table>
     </div>

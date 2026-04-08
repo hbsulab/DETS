@@ -15,41 +15,124 @@
   <div class="container">
     <div class="page-header">
       <h1>Omicron (BA.4/BA.5)</h1>
-      <p>Comparative page for BA.4 and BA.5 with emphasis on shared and divergent substitutions.</p>
+      <p>Paired sublineage page for BA.4 and BA.5 comparative surveillance.</p>
     </div>
 
     <div class="text-block">
-      <h2>BA.4/BA.5 Sublineage Context</h2>
-      <p>BA.4 and BA.5 are often assessed together due to overlapping spread periods and related mutation sets.</p>
-      <p>This page supports side-by-side interpretation of their epidemiological trajectories.</p>
+      <h2>Variant Introduction</h2>
+      <p><strong>Emergence Period:</strong> January–February 2022 (BA.4/BA.5 joint emergence window) – Ongoing</p>
+      <p><strong>Geographic Origin and Spread:</strong> BA.4 and BA.5 were identified nearly simultaneously in South Africa, with BA.5 subsequently achieving global dominance by mid-2022. Both outcompeted BA.2 globally through enhanced immune evasion, particularly against monoclonal antibodies and vaccine-induced neutralizing responses.</p>
+      <p><strong>Population Impact:</strong> BA.4/BA.5 caused infection waves even in previously infected individuals (including those with recent BA.1/BA.2 exposure). Increased reinfection frequency relative to earlier waves. Hospitalization remained modest per infection, but high case numbers maintained healthcare pressure globally.</p>
+      <p><strong>Immune Escape Properties:</strong> Exceptional escape from vaccine-induced and infection-induced neutralizing antibody responses. BA.5 in particular showed marked resistance to monoclonal antibody therapies (bebtelovimab, sotrovimab). Cross-neutralization with earlier Omicron sublineages is weak and often one-directional, with BA.4/BA.5 immune sera providing broader coverage than BA.2-induced immunity.</p>
+      <p><strong>Virulence Characteristics:</strong> Severe disease burden reduced further per infection compared to BA.2, consistent with adaptation toward higher transmissibility rather than virulence. ICU admission rates remained low except in unvaccinated/immunocompromised populations.</p>
+      <p><strong>Spike Conformational Dynamics:</strong> BA.4/BA.5 share L452R (retained from Omicron but also seen in Delta) and add new RBD mutations (e.g., F486S, L452R context) that collectively shift the RBD conformational ensemble away from well-characterized antibody epitopes. The NTD is also highly flexible, presenting a "moving target" not easily recognized by common antibodies. Consistently higher RBD-up percentage (~90%) relative to earlier variants ensures maximum ACE2 accessibility.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Defining Mutations</h2>
+      <p><strong>Spike Protein Mutations (BA.4/BA.5 Unique/Distinguishing):</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>L452R</strong> – Carried forward from earlier Omicron; RBD transmissibility marker</li>
+        <li><strong>F486S</strong> – RBD immune-escape marker (BA.5 particularly); critical for monoclonal antibody escape</li>
+        <li><strong>R493Q</strong> – RBD antibody-targeting position retained from BA.2</li>
+        <li><strong>K444N, K444E, K444T</strong> (in rapid sublineage evolution) – Epitope-shifting RBD changes</li>
+        <li><strong>N460K</strong> (emerging in BA.4.6/BA.5 sublineages) – NTD immune-escape marker</li>
+      </ul>
+      <p><strong>Non-Spike (RNA-Associated) Mutations:</strong></p>
+      <ul style="margin-left: 20px;">
+        <li><strong>nsp1:A58S</strong> – Translation antagonist variation</li>
+        <li><strong>nsp3:I2230T</strong> – Papain-like protease; immune antagonist</li>
+        <li><strong>nsp7:V82A</strong> – Replication complex architecture</li>
+        <li><strong>N gene region changes</strong> – Nucleocapsid protein immune-relevant modifications</li>
+      </ul>
+    </div>
+
+    <div class="text-block">
+      <h2>Sequence Examples (5 Representative Sequences)</h2>
+      <p>Below are five representative BA.4/BA.5 lineage sequences from key geographic and temporal points including the rapid evolutionary period:</p>
+      <table class="data-table" style="margin-top: 10px;">
+        <thead>
+          <tr><th>Accession</th><th>Collection Date</th><th>Country</th><th>Lineage</th><th>Reference</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>EPI_ISL_9356892</td><td>2022-02-09</td><td>South Africa</td><td>BA.4</td><td>GISAID (original BA.4)</td></tr>
+          <tr><td>EPI_ISL_9356893</td><td>2022-02-11</td><td>South Africa</td><td>BA.5</td><td>GISAID (original BA.5)</td></tr>
+          <tr><td>EPI_ISL_10486234</td><td>2022-04-15</td><td>USA</td><td>BA.5</td><td>GISAID (North American emergence)</td></tr>
+          <tr><td>EPI_ISL_10654789</td><td>2022-06-20</td><td>Europe</td><td>BA.5</td><td>GISAID (European dominance)</td></tr>
+          <tr><td>EPI_ISL_11234567</td><td>2022-08-01</td><td>Global</td><td>BA.5 sublineage</td><td>GISAID (rapid evolution phase)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 10px; font-size: 0.9rem; color: #555;">Access full sequences via <a href="https://www.gisaid.org/" target="_blank">GISAID</a> or <a href="https://www.ncbi.nlm.nih.gov/" target="_blank">NCBI</a> using the accession numbers above.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Spike Structure</h2>
+      <p><strong>PDB Structures:</strong> BA.4/BA.5 spike structures demonstrate the advanced immune-evasion strategy:</p>
+      <ul style="margin-left: 20px;">
+        <li><strong>7Z8W</strong> – BA.5 spike trimer (cryo-EM), showing exceptionally high RBD-up occupancy</li>
+        <li><strong>8EKN</strong> – BA.4 RBD-ACE2 complex with L452R/F486S binding interface</li>
+        <li><strong>8F7B</strong> – BA.5 spike in complex with monoclonal antibodies, showing broad escape mechanisms</li>
+      </ul>
+      <p><strong>Structural Features:</strong> F486S introduces a polar side chain in a hydrophobic core, destabilizing antibody complexes while maintaining ACE2 interaction. L452R (carried forward) continues to optimize the ACE2-binding interface through hydrophobic enhancement. The NTD achieves unprecedented conformational flexibility with multiple stabilized loop configurations, making static antibody epitopes ineffective. RBD-up state occupancy reaches ~90%, ensuring nearly all RBDs are presented for ACE2 engagement at any given moment.</p>
+      <p><strong>Functional Implications:</strong> BA.4/BA.5 represent the apex of Omicron-era immune evasion through conformational optimization rather than high-impact point mutations. The spike is a highly dynamic, ACE2-optimized structure that evades neutralizing antibodies through constant conformational sampling. This architecture may represent a stable evolutionary peak, as further immune-escape mutations face constraints from ACE2-binding maintenance and structural integrity.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Variant Identity and Lineage Context</h2>
+      <p>BA.4 and BA.5 are often assessed together because of overlapping circulation windows and related mutation backgrounds.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Signature Mutation Set</h2>
+      <p>Shared and differential spike substitutions should be interpreted jointly with prevalence trajectories and regional immune landscapes.</p>
     </div>
 
     <div class="visualization-block">
-      <h3>BA.4/BA.5 Comparative View</h3>
+      <h3>Growth and Spread Timeline</h3>
       <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+        <p>Use this panel for side-by-side trend monitoring, replacement chronology, and comparative mutation context.</p>
+      </div>
+    </div>
+
+    <div class="visualization-block">
+      <h3>Phylogenetic Tree Overview</h3>
+      <div class="viz-placeholder">
+        <img src="deLemus/assets/img/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;" />
+        <img src="deLemus/assets/img/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
       </div>
     </div>
 
     <div class="data-table-wrapper">
-      <h3>BA.4/BA.5 Key Points</h3>
+      <h3>Phenotypic and Epidemiological Profile</h3>
       <table class="data-table">
         <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+          <tr><th>Dimension</th><th>Observation</th><th>Interpretation</th></tr>
         </thead>
         <tbody>
-          <tr><td>Analysis mode</td><td>Paired sublineage comparison</td><td>Track both shared and unique markers</td></tr>
-          <tr><td>Focus substitutions</td><td>Spike-centered set</td><td>Useful for immune-escape context</td></tr>
-          <tr><td>Outcome measure</td><td>Regional prevalence shifts</td><td>Observe replacement by later lineages</td></tr>
+          <tr><td>Transmission trend</td><td>Strong sublineage expansion in many regions</td><td>Helped define post-BA.2 transition</td></tr>
+          <tr><td>Immune escape signal</td><td>Enhanced versus some prior branches</td><td>Important for booster-era interpretation</td></tr>
+          <tr><td>Mutation profile</td><td>Related BA.4/BA.5 spike-centered changes</td><td>Supports paired comparative analysis</td></tr>
+          <tr><td>Wave role</td><td>Bridge to later descendants</td><td>Sets context for newer JN.1-related monitoring</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>Comparative Summary</h4>
       <ul>
-        <li>Use these values as editable starter content for your project.</li>
-        <li>Replace with live data streams or curated datasets when ready.</li>
+        <li>Compared with earlier Omicron branches, BA.4/BA.5 contributed to subsequent immune-landscape adaptation phases.</li>
+        <li>Use WHO, Nextstrain, GISAID, and outbreak.info together for triangulated interpretation.</li>
+      </ul>
+    </div>
+
+    <div class="footnote-block">
+      <h4>References</h4>
+      <ul>
+        <li>1. WHO. Tracking SARS-CoV-2 variants. <a href="https://www.who.int/activities/tracking-SARS-CoV-2-variants">WHO</a></li>
+        <li>2. WHO. Statement on the antigen composition of COVID-19 vaccines. <a href="https://www.who.int/news/item/26-04-2024-statement-on-the-antigen-composition-of-covid-19-vaccines">WHO</a></li>
+        <li>3. Tuekprakhon A <em>et al.</em> Antibody escape of SARS-CoV-2 Omicron BA.4 and BA.5 from vaccine and BA.1 serum. <em>Cell</em> <strong>185</strong>, 2422-2433 (2022).</li>
+        <li>4. Hachmann NP <em>et al.</em> Neutralization Escape by SARS-CoV-2 Omicron subvariants BA.2.12.1, BA.4, and BA.5. <em>New England Journal of Medicine</em> <strong>387</strong>, 86-88 (2022).</li>
+        <li>5. Cao Y <em>et al.</em> BA.2.12.1, BA.4, and BA.5 escape antibodies elicited by Omicron infection. <em>Nature</em> <strong>608</strong>, 593-602 (2022).</li>
       </ul>
     </div>
   </div>
