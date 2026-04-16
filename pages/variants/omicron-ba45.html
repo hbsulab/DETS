@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DETS | Omicron BA.4/BA.5</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="../../css/styles.css">
 </head>
-<body>
+<body data-page-kind="variant" data-page-key="omicron-ba45">
 
 <div id="header-placeholder"></div>
 <div id="navigator-placeholder"></div>
@@ -97,8 +97,8 @@
     <div class="visualization-block">
       <h3>Phylogenetic Tree Overview</h3>
       <div class="viz-placeholder">
-        <img src="deLemus/assets/img/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;" />
-        <img src="deLemus/assets/img/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
+        <img src="../../deLemus/assets/img/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" style="max-width:100%;height:auto;display:block;margin:0 auto 14px;" />
+        <img src="../../deLemus/assets/img/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
       </div>
     </div>
 
@@ -140,6 +140,19 @@
 
 <div id="footer-placeholder"></div>
 
-<script src="js/load-components.js"></script>
+<script id="variant-widget-data" type="application/json">
+{
+  "pageKey": "omicron-ba45",
+  "title": "Omicron BA.4/BA.5",
+  "path": ["Wuhan", "D614G", "BA.1", "BA.2", "BA.4/BA.5"],
+  "proteinMutations": ["L452R", "F486V", "R493Q", "D614G"],
+  "rnaMutations": ["C56T", "G425A", "T638G", "G1016A", "C1112T", "T1355G", "A1841G", "C3438T"],
+  "workbookClass": "BA.4&5",
+  "pdbIds": ["7Z8W", "6VSB"],
+  "epiIds": ["EPI_ISL_10486234", "EPI_ISL_10654789", "EPI_ISL_11234567", "EPI_ISL_9356892", "EPI_ISL_9356893"]
+}
+</script>
+
+<script src="../../js/load-components.js"></script>
 </body>
 </html>

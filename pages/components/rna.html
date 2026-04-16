@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DETS | Viral RNA</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="../../css/styles.css">
 </head>
-<body>
+<body data-page-kind="component" data-page-key="rna">
 
 <div id="header-placeholder"></div>
 <div id="navigator-placeholder"></div>
@@ -22,6 +22,27 @@
       <h2>Genome Organization</h2>
       <p>SARS-CoV-2 carries a positive-sense single-stranded RNA genome that includes ORF1ab, structural genes (S, E, M, N), accessory regions, and untranslated regions. This organization supports both immediate translation and downstream replication-transcription programs.</p>
       <p>Tracking where substitutions accumulate across coding and non-coding regions helps separate conserved loci from rapidly adapting regions under host and transmission pressures.</p>
+    </div>
+
+    <div class="visualization-block">
+      <h3>RNA Secondary Structure (Published Reference)</h3>
+      <div class="feature-panel">
+        <p><strong>Citation:</strong> Manfredonia, I., Nithin, C., Ponce-Salvatierra, A., et al. (2021). In vivo structural characterization of the SARS-CoV-2 RNA genome identifies host proteins vulnerable to repurposed drugs. <em>Cell</em>, 184(7), 1865-1883.e20. <a href="https://doi.org/10.1016/j.cell.2021.02.008" target="_blank" rel="noopener noreferrer">https://doi.org/10.1016/j.cell.2021.02.008</a></p>
+        <svg viewBox="0 0 900 260" class="tree-svg" role="img" aria-label="RNA secondary structure schematic">
+          <rect width="900" height="260" rx="20" fill="#f7fbfd"></rect>
+          <path d="M60 160 C130 60, 230 60, 300 160" stroke="#2d90b3" stroke-width="4" fill="none"></path>
+          <path d="M310 160 C370 90, 450 90, 510 160" stroke="#2d90b3" stroke-width="4" fill="none"></path>
+          <path d="M520 160 C580 50, 700 50, 760 160" stroke="#2d90b3" stroke-width="4" fill="none"></path>
+          <line x1="40" y1="190" x2="860" y2="190" stroke="#5ea8c2" stroke-width="5" stroke-linecap="round"></line>
+          <text x="50" y="225" font-size="16" fill="#195f79">5' UTR</text>
+          <text x="345" y="225" font-size="16" fill="#195f79">S coding region</text>
+          <text x="760" y="225" font-size="16" fill="#195f79">3' UTR</text>
+          <text x="160" y="120" font-size="14" fill="#0f5b73">Stem-loop cluster</text>
+          <text x="392" y="120" font-size="14" fill="#0f5b73">Local hairpins</text>
+          <text x="620" y="105" font-size="14" fill="#0f5b73">Long-range pairing</text>
+        </svg>
+        <p class="sequence-note">Schematic view for quick orientation. For publication-grade figures and methods, use the DOI link above.</p>
+      </div>
     </div>
 
     <div class="visualization-block">
@@ -58,6 +79,6 @@
 
 <div id="footer-placeholder"></div>
 
-<script src="js/load-components.js"></script>
+<script src="../../js/load-components.js"></script>
 </body>
 </html>

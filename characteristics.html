@@ -14,72 +14,42 @@
 <div id="main_container">
   <div class="container">
     <div class="page-header">
-      <h1>Variant Characteristics</h1>
-      <p>Trait-oriented and mechanistic view of transmissibility, immune escape, mutation signatures, viral life cycle, and spike dynamics.</p>
+      <h1>Characteristics</h1>
+      <p>Choose a mechanistic subpage for the viral cycle, mutation rate, sequence-density view, and the remaining placeholder topics.</p>
     </div>
 
-    <div class="text-block">
-      <h2>Viral Cycle and Molecular Components</h2>
-      <p>SARS-CoV-2 infection begins when spike (S) engages ACE2 and is primed by host proteases (such as TMPRSS2 or cathepsin pathways), enabling membrane fusion or endosomal entry. After uncoating, the positive-sense RNA genome is translated to produce polyproteins (pp1a/pp1ab), which are cleaved into non-structural proteins (nsps) that form the replication-transcription complex.</p>
-      <p>The replication complex, centered on nsp12 (RdRp) with cofactors nsp7/nsp8 and proofreading by nsp14, generates genomic and subgenomic RNAs. Structural proteins S, E, M, and N are then produced: N packages RNA, while S/E/M assemble in ER-Golgi intermediate compartments, followed by virion release via secretory pathways.</p>
-    </div>
-
-    <div class="visualization-block">
-      <h3>Spatiotemporal Spike Dynamics and Evolution</h3>
-      <div class="viz-placeholder">
-        <p>Spike evolution is shaped by both space and time: tissue compartments, host immunity, and transmission bottlenecks create shifting selection landscapes where different substitutions are favored at different stages.</p>
-        <p style="margin-top: 10px;">At the molecular level, the RBD open/closed conformational balance and S1/S2 processing efficiency influence receptor engagement, fusion route, and antibody accessibility. Over epidemic time, recurrent substitutions in immune-facing residues (for example around R346, L455/F456, K444/V445, and Q493 positions) reflect convergent adaptation under population immunity.</p>
-      </div>
-    </div>
-
-    <div class="data-table-wrapper">
-      <h3>Cycle Stage, RNA, and Protein Functions</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th>Life-Cycle Stage</th><th>Key RNA / Proteins</th><th>Evolutionary Relevance</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Attachment and Entry</td><td>Spike (S), ACE2 interaction, host proteases</td><td>RBD and cleavage-site changes can alter transmissibility and cell tropism</td></tr>
-          <tr><td>Replication and Transcription</td><td>Genomic RNA, nsp12 (RdRp), nsp7/8, nsp14</td><td>Polymerase-complex mutations tune replication fidelity and adaptability</td></tr>
-          <tr><td>Assembly and Release</td><td>Subgenomic RNAs, S/E/M/N proteins, ERGIC trafficking</td><td>Structural-protein compatibility affects fitness and lineage persistence</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="text-block">
-      <h2>Phenotypic and Genotypic Profiles</h2>
-      <p>Each lineage can be represented with a concise profile that combines defining substitutions with observed epidemiological behavior.</p>
-      <p>This helps researchers compare lineages with a common schema across different waves.</p>
-    </div>
-
-    <div class="visualization-block">
-      <h3>Variant Trait Comparison</h3>
-      <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
-      </div>
-    </div>
-
-    <div class="data-table-wrapper">
-      <h3>Characteristic Summary Table</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Key trait groups</td><td>Transmission, escape, severity</td><td>Qualitative or quantitative scales</td></tr>
-          <tr><td>Mutation categories</td><td>Spike and non-spike</td><td>Flag lineage-defining changes</td></tr>
-          <tr><td>Interpretation mode</td><td>Comparative</td><td>Side-by-side lineage cards</td></tr>
-        </tbody>
-      </table>
+    <div class="subpage-grid">
+      <a class="subpage-card" href="pages/characteristics/viral-cycle.html">
+        <h3>Viral Cycle</h3>
+        <p>The current mechanistic explanation of entry, replication, assembly, and release.</p>
+      </a>
+      <a class="subpage-card" href="pages/characteristics/mutation-rate.html">
+        <h3>Mutation Rate</h3>
+        <p>Home for Fig2_MutRate.pdf and a short explanation of temporal mutation accumulation.</p>
+      </a>
+      <a class="subpage-card" href="pages/characteristics/probability-of-sequence-density.html">
+        <h3>Probability of Sequence Density</h3>
+        <p>Home for Fig3_PSD.pdf and a short explanation of the sequence-density probability view.</p>
+      </a>
+      <a class="subpage-card" href="pages/characteristics/network.html">
+        <h3>Network</h3>
+        <p>Empty placeholder page reserved for mutation and transmission networks.</p>
+      </a>
+      <a class="subpage-card" href="pages/characteristics/dynamics-md.html">
+        <h3>Dynamics MD</h3>
+        <p>Empty placeholder page reserved for molecular-dynamics and conformational analysis.</p>
+      </a>
+      <a class="subpage-card" href="pages/characteristics/rdrp.html">
+        <h3>RdRp</h3>
+        <p>Dedicated polymerase page with the 7UO7 sequence and structure viewer.</p>
+      </a>
     </div>
 
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>External resources</h4>
       <ul>
-        <li>Use these values as editable starter content for your project.</li>
-        <li>Replace with live data streams or curated datasets when ready.</li>
-        <li>Use this page as a mechanistic bridge between genotype (mutations) and phenotype (transmission, escape, and persistence).</li>
-        <li>Pair these concepts with the Evolution and Spike pages for monthly mutation trajectories and lineage context.</li>
+        <li><a href="https://www.rcsb.org/" target="_blank" rel="noopener noreferrer">RCSB PDB</a> for structural downloads and embeddings.</li>
+        <li><a href="https://www.nature.com/subjects/viral-infection" target="_blank" rel="noopener noreferrer">Nature</a>, <a href="https://www.sciencedirect.com/" target="_blank" rel="noopener noreferrer">ScienceDirect</a>, and related sources for figure-backed interpretation.</li>
       </ul>
     </div>
   </div>

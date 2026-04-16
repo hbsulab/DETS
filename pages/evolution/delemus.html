@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>DETS | deLemus</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+</head>
+<body>
+
+<div id="header-placeholder"></div>
+<div id="navigator-placeholder"></div>
+
+<div id="main_container">
+  <div class="container">
+    <div class="page-header">
+      <h1>Evolution</h1>
+      <p>Integrated view of Updates and Time Course from the deLemus reference pages.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>About deLemus</h2>
+      <p>The dynamic epidemiology of COVID-19 has been driven by the continuous evolution of SARS-CoV-2. Variants and subvariants emerge with novel mutations that fine-tune viral fitness and sustain global circulation. deLemus focuses on monitoring these evolutionary trajectories and identifying leading spike mutations that can signal upcoming shifts in dominant lineages.</p>
+      <p>By applying low-rank tensor decomposition and epistatic correlation analysis to reported sequence data, deLemus outlines leading mutations on a monthly basis and supports early warning for variant evolution.</p>
+    </div>
+
+    <div class="visualization-block">
+      <h3>Mechanism and Landscape Overview</h3>
+      <div class="feature-panel">
+        <p>Multi-scale examination of viral evolution across structural, epidemiological, and temporal contexts.</p>
+        <iframe src="../../assets/data/Fig1_Overview+LMCM_new.pdf" title="Figure 1: Overview and Landscape Context" style="width:100%;height:600px;border:1px solid #ddd;"></iframe>
+        <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 1:</strong> Overview of mutation landscape and core mechanisms (LMCM) in SARS-CoV-2 evolution.</p>
+      </div>
+    </div>
+
+    <div class="visualization-block">
+      <h3>Landscape and Mechanisms: Main Findings</h3>
+      <div class="feature-panel">
+        <p>Key evolutionary insights from lineage-level mutation composition and co-evolution patterns.</p>
+        <iframe src="../../assets/data/Fig4_LMCM_mains.pdf" title="Figure 4: Landscape and Mechanisms Main Insights" style="width:100%;height:600px;border:1px solid #ddd;"></iframe>
+        <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 4:</strong> Main findings from landscape and mechanistic context of LMCM analysis.</p>
+      </div>
+    </div>
+
+    <div class="text-block">
+      <h2>Updates</h2>
+      <p class="subtle">The identified leading mutations from 2023 to 2025 are listed below. Select a month to switch the update panel.</p>
+      <div class="picker-row">
+        <select id="updatesSelect"></select>
+      </div>
+      <div class="visualization-block" style="margin-bottom: 0;">
+        <h3 id="updatesTitle">Outlined Mutations</h3>
+        <div class="viz-placeholder img-stack" id="updatesPanel"></div>
+      </div>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>Time Course</h2>
+      <p class="subtle">Time-course analysis of identified leading mutations across NTD, RBD, and other domains.</p>
+      <div class="picker-row">
+        <select id="timeCourseSelect"></select>
+      </div>
+      <div class="visualization-block" style="margin-bottom: 0;">
+        <h3 id="timeCourseTitle">Time Course Panel</h3>
+        <div class="viz-placeholder img-stack" id="timeCoursePanel"></div>
+      </div>
+    </div>
+
+    <div class="text-block">
+      <h2>Evolutionary Change Through Time</h2>
+      <p>This page emphasizes temporal dynamics, including acceleration periods where new adaptive constellations emerged.</p>
+      <p>A timeline-plus-tree approach can reveal when specific substitutions became fixed in expanding clades.</p>
+    </div>
+
+    <div class="visualization-block">
+      <h3>Temporal Lineage Dynamics</h3>
+      <div class="viz-placeholder">
+        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
+      </div>
+    </div>
+
+    <div class="data-table-wrapper">
+      <h3>Evolution Analysis Metrics</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Primary axis</td><td>Collection date</td><td>Supports monthly or weekly bins</td></tr>
+          <tr><td>Modeling focus</td><td>Growth advantage</td><td>Relative lineage expansion rates</td></tr>
+          <tr><td>Outputs</td><td>Trend plots, trees</td><td>Intended for exploratory analysis</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footnote-block">
+      <h4>Notes</h4>
+      <ul>
+        <li>Use these values as editable starter content for your project.</li>
+        <li>Replace with live data streams or curated datasets when ready.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script>
+  const updatesData = [
+    { key: '2025.07', main: '../../deLemus/assets/img/update_2507/2025-07.png' },
+    { key: '2025.06', main: '../../deLemus/assets/img/update_2506/2025-06.png' },
+    { key: '2025.05', main: '../../deLemus/assets/img/update_2505/2025-05.png' },
+    { key: '2025.04', main: '../../deLemus/assets/img/update_2504/2025-04.png' },
+    { key: '2025.03', main: '../../deLemus/assets/img/update_2503/2025-03.png' },
+    { key: '2025.02', main: '../../deLemus/assets/img/update_2502/2025-02.png' },
+    { key: '2025.01', main: '../../deLemus/assets/img/update_2501/2025-01.png', confirm: '../../deLemus/assets/img/update_2501/confirmed_202501.png' },
+    { key: '2024.12', main: '../../deLemus/assets/img/update_2412/2024-12.png', confirm: '../../deLemus/assets/img/update_2412/confirmed_202412.png' },
+    { key: '2024.11', main: '../../deLemus/assets/img/update_2411/2024-11.png', confirm: '../../deLemus/assets/img/update_2411/confirmed_202411.png' },
+    { key: '2024.10', main: '../../deLemus/assets/img/update_2410/2024-10.png', confirm: '../../deLemus/assets/img/update_2410/confirmed_202410.png' },
+    { key: '2024.09', main: '../../deLemus/assets/img/update_2409/2024-09.png', confirm: '../../deLemus/assets/img/update_2409/confirmed_202409.png' },
+    { key: '2024.08', main: '../../deLemus/assets/img/update_2408/2024-08.png', confirm: '../../deLemus/assets/img/update_2408/confirmed_202408.png' },
+    { key: '2024.07', main: '../../deLemus/assets/img/update_2407/2024-07.png', confirm: '../../deLemus/assets/img/update_2407/confirmed_202407.png' },
+    { key: '2024.06', main: '../../deLemus/assets/img/update_2406/2024-06.png', confirm: '../../deLemus/assets/img/update_2406/confirmed_202406.png' },
+    { key: '2024.05', main: '../../deLemus/assets/img/update_2405/2024-05.png', confirm: '../../deLemus/assets/img/update_2405/confirmed_202405.png' },
+    { key: '2024.04', main: '../../deLemus/assets/img/update_2404/2024-04.png', confirm: '../../deLemus/assets/img/update_2404/confirmed_202404.png' },
+    { key: '2024.03', main: '../../deLemus/assets/img/update_2403/2024-03.png', confirm: '../../deLemus/assets/img/update_2403/confirmed_202403.png' },
+    { key: '2024.02', main: '../../deLemus/assets/img/update_2402/2024-02.png', confirm: '../../deLemus/assets/img/update_2402/confirmed_202402.png' },
+    { key: '2024.01', main: '../../deLemus/assets/img/update_2401/2024-01.png', confirm: '../../deLemus/assets/img/update_2401/confirmed_202401.png' },
+    { key: '2023.12', main: '../../deLemus/assets/img/update_2312/2023-12.png', confirm: '../../deLemus/assets/img/update_2312/confirmed_202312.png' },
+    { key: '2023.11', main: '../../deLemus/assets/img/update_2311/2023-11.png', confirm: '../../deLemus/assets/img/update_2311/confirmed_mutations.png' },
+    { key: '2023.10', main: '../../deLemus/assets/img/update_2310/2023-10.png', confirm: '../../deLemus/assets/img/update_2310/confirmed_mutations.png' },
+    { key: '2023.09', main: '../../deLemus/assets/img/update_2309/2023-09.png', confirm: '../../deLemus/assets/img/update_2309/confirmed_mutations.png' },
+    { key: '2023.08', main: '../../deLemus/assets/img/update_2308/2023-08.png', confirm: '../../deLemus/assets/img/update_2308/confirmed_202308.png', extra: '../../deLemus/assets/img/update_2308/2023-08_VarRBD.png' },
+    { key: '2023.07', main: '../../deLemus/assets/img/update_2307/2023-07.png', confirm: '../../deLemus/assets/img/update_2307/confirmed_202307.png' },
+    { key: '2023.06', main: '../../deLemus/assets/img/update_2306/2023-06.png', confirm: '../../deLemus/assets/img/update_2306/confirmed_2306.png' },
+    { key: '2023.05', main: '../../deLemus/assets/img/update_2305/2023-05.png', confirm: '../../deLemus/assets/img/update_2305/confirmed_2305.png' },
+    { key: '2023.04', main: '../../deLemus/assets/img/update_2304/2023-04.png', confirm: '../../deLemus/assets/img/update_2304/confirmed_2304.png' },
+    { key: '2023.03', main: '../../deLemus/assets/img/update_2303/2023-03.png', confirm: '../../deLemus/assets/img/update_2303/confirmed_2303.png' },
+    { key: '2023.02', main: '../../deLemus/assets/img/update_2302/2023-02.png', confirm: '../../deLemus/assets/img/update_2302/confirmed_2302.png' },
+    { key: '2023.01', main: '../../deLemus/assets/img/update_2301/2023-01.png', confirm: '../../deLemus/assets/img/update_2301/confirmed_2301.png' }
+  ];
+
+  const timeCourseData = [
+    { key: '2023.07', images: ['../../deLemus/assets/img/TC0202307/2023-07a.png', '../../deLemus/assets/img/TC0202307/2023-07b.png', '../../deLemus/assets/img/TC0202307/2023-07c.png'] },
+    { key: '2023.06', images: ['../../deLemus/assets/img/TC202306/2023-06a.png', '../../deLemus/assets/img/TC202306/2023-06b.png', '../../deLemus/assets/img/TC202306/2023-06c.png'] },
+    { key: '2023.05', images: ['../../deLemus/assets/img/TC202305/2023-05a.png', '../../deLemus/assets/img/TC202305/2023-05b.png', '../../deLemus/assets/img/TC202305/2023-05c.png'] },
+    { key: '2023.04', images: ['../../deLemus/assets/img/TC202304/2023-04a.png', '../../deLemus/assets/img/TC202304/2023-04b.png', '../../deLemus/assets/img/TC202304/2023-04c.png'] },
+    { key: '2023.03', images: ['../../deLemus/assets/img/TC202303/2023-03a.png', '../../deLemus/assets/img/TC202303/2023-03b.png', '../../deLemus/assets/img/TC202303/2023-03c.png'] },
+    { key: '2023.02', images: ['../../deLemus/assets/img/TC202302/2023-02a.png', '../../deLemus/assets/img/TC202302/2023-02b.png', '../../deLemus/assets/img/TC202302/2023-02c.png'] },
+    { key: '2023.01', images: ['../../deLemus/assets/img/TC202301/2023-01a.png', '../../deLemus/assets/img/TC202301/2023-01b.png', '../../deLemus/assets/img/TC202301/2023-01c.png'] },
+    { key: '2022.08', images: ['../../deLemus/assets/img/TC202208/2022-08a.png', '../../deLemus/assets/img/TC202208/2022-08b.png', '../../deLemus/assets/img/TC202208/2022-08c.png'] },
+    { key: '2022.06', images: ['../../deLemus/assets/img/TC202206/2022-06a.png', '../../deLemus/assets/img/TC202206/2022-06b.png', '../../deLemus/assets/img/TC202206/2022-06c.png'] },
+    { key: '2021.08', images: ['../../deLemus/assets/img/TC202108/2021-08a.png', '../../deLemus/assets/img/TC202108/2021-08b.png', '../../deLemus/assets/img/TC202108/2021-08c.png'] },
+    { key: '2021.03', images: ['../../deLemus/assets/img/TC202103/2021-03.png'] },
+    { key: '2020.12', images: ['../../deLemus/assets/img/TC202012/2020-12.png'] },
+    { key: '2020.11', images: ['../../deLemus/assets/img/TC202011/2020-11.png'] },
+    { key: '2020.10', images: ['../../deLemus/assets/img/TC202010/2020-10.png'] }
+  ];
+
+  function renderUpdates(key) {
+    const target = document.getElementById('updatesPanel');
+    const title = document.getElementById('updatesTitle');
+    const item = updatesData.find((entry) => entry.key === key);
+    if (!item) return;
+    title.textContent = `Outlined Mutations in ${item.key}`;
+    target.innerHTML = '';
+
+    const main = document.createElement('img');
+    main.src = item.main;
+    main.alt = `Outlined mutations ${item.key}`;
+    main.style.maxWidth = '100%';
+    main.style.height = 'auto';
+    main.style.display = 'block';
+    main.style.margin = '0 auto';
+    target.appendChild(main);
+
+    if (item.confirm) {
+      const h = document.createElement('p');
+      h.textContent = 'Confirmed Mutations';
+      h.style.fontWeight = '600';
+      h.style.margin = '8px 0';
+      target.appendChild(h);
+
+      const confirm = document.createElement('img');
+      confirm.src = item.confirm;
+      confirm.alt = `Confirmed mutations ${item.key}`;
+      confirm.style.maxWidth = '100%';
+      confirm.style.height = 'auto';
+      confirm.style.display = 'block';
+      confirm.style.margin = '0 auto';
+      target.appendChild(confirm);
+    }
+
+    if (item.extra) {
+      const e = document.createElement('img');
+      e.src = item.extra;
+      e.alt = `Additional panel ${item.key}`;
+      e.style.maxWidth = '100%';
+      e.style.height = 'auto';
+      e.style.display = 'block';
+      e.style.margin = '14px auto 0';
+      target.appendChild(e);
+    }
+  }
+
+  function renderTimeCourse(key) {
+    const target = document.getElementById('timeCoursePanel');
+    const title = document.getElementById('timeCourseTitle');
+    const item = timeCourseData.find((entry) => entry.key === key);
+    if (!item) return;
+    title.textContent = `Time Course ${item.key}`;
+    target.innerHTML = '';
+
+    item.images.forEach((src, idx) => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = `Time course ${item.key} panel ${idx + 1}`;
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.display = 'block';
+      img.style.margin = '0 auto 12px';
+      target.appendChild(img);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const updatesSelect = document.getElementById('updatesSelect');
+    const timeCourseSelect = document.getElementById('timeCourseSelect');
+
+    updatesData.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.key;
+      option.textContent = item.key;
+      updatesSelect.appendChild(option);
+    });
+
+    timeCourseData.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.key;
+      option.textContent = item.key;
+      timeCourseSelect.appendChild(option);
+    });
+
+    updatesSelect.value = updatesData[0].key;
+    timeCourseSelect.value = timeCourseData[0].key;
+    renderUpdates(updatesSelect.value);
+    renderTimeCourse(timeCourseSelect.value);
+
+    updatesSelect.addEventListener('change', (e) => renderUpdates(e.target.value));
+    timeCourseSelect.addEventListener('change', (e) => renderTimeCourse(e.target.value));
+  });
+</script>
+<script src="../../js/load-components.js"></script>
+</body>
+</html>
