@@ -522,9 +522,10 @@ function renderStructureViewer(targetId, source, sourceType, style = {}) {
 
     viewer.addModel(source, sourceType);
     viewer.zoomTo();
-    // Use ribbon as the default biomolecular representation.
-    const ribbonStyle = style.ribbon ? { ribbon: style.ribbon } : { ribbon: { color: 'chain' } };
-    viewer.addStyle({}, ribbonStyle);
+    // Use cartoon as the default biomolecular representation.
+    const cartoonSpec = style.cartoon || { color: 'chain' };
+    viewer.setStyle({}, {});
+    viewer.addStyle({}, { cartoon: cartoonSpec });
     if (style.sidechains) {
       viewer.addStyle({ hetflag: false, atom: 'CA' }, style.sidechains);
     }
@@ -718,11 +719,11 @@ function renderVariantWidget(pageKey) {
     const viewerTargetId = `variant-structure-viewer-${pageKey}`;
     const pdbSelect = structureSection.querySelector(`#pdbSelect-${pageKey}`);
     const loadVariantStructure = (pdbId) => {
-      fetchTextCached(`https://files.rcsb.org/download/${pdbId}.pdb`).then((pdbText) => {
-        renderStructureViewer(viewerTargetId, pdbText, 'pdb', { ribbon: { color: 'chain' } });
+      fetchTextCached(`https://files.rcsb.org/view/${pdbId}.cif`).then((cifText) => {
+        renderStructureViewer(viewerTargetId, cifText, 'cif', { cartoon: { color: 'chain' } });
       }).catch(() => {
         const target = document.getElementById(viewerTargetId);
-        if (target) target.innerHTML = `<p style="padding:20px;">Unable to load ${pdbId}. Open it in RCSB or retry.</p>`;
+        if (target) target.innerHTML = `<p style="padding:20px;">Unable to load ${pdbId} from RCSB. Open it in RCSB or retry.</p>`;
       });
     };
 
@@ -956,7 +957,7 @@ function renderComponentWidget(pageKey) {
       `;
 
       fetchTextCached('https://files.rcsb.org/download/6VSB.pdb').then((pdbText) => {
-        renderStructureViewer('spike-structure-viewer', pdbText, 'pdb', { ribbon: { color: 'chain' } });
+        renderStructureViewer('spike-structure-viewer', pdbText, 'pdb', { cartoon: { color: 'chain' } });
       }).catch(() => {
         const target = document.getElementById('spike-structure-viewer');
         if (target) target.innerHTML = '<p style="padding:20px;">Spike structure loading failed. Open 6VSB or 7KRR in an external structure viewer.</p>';
@@ -993,7 +994,7 @@ function renderComponentWidget(pageKey) {
       `;
 
       fetchTextCached(getLocalResourcePath('assets/data/7uo7-holo.pdb')).then((pdbText) => {
-        renderStructureViewer('rdrp-structure-viewer', pdbText, 'pdb', { ribbon: { color: 'chain' } });
+        renderStructureViewer('rdrp-structure-viewer', pdbText, 'pdb', { cartoon: { color: 'chain' } });
       });
     }
 
@@ -1021,6 +1022,122 @@ function renderComponentWidget(pageKey) {
   });
 }
 
+function renderEvolutionWidget(pageKey) {
+  if (pageKey !== 'delemus') return;
+
+  const configNode = document.getElementById('evolution-widget-data');
+  if (!configNode) return;
+
+  let data;
+  try {
+    data = JSON.parse(configNode.textContent || '{}');
+  } catch (error) {
+    console.error('Invalid evolution-widget-data JSON:', error);
+    return;
+  }
+
+  const updatesData = Array.isArray(data.updatesData) ? data.updatesData : [];
+  const timeCourseData = Array.isArray(data.timeCourseData) ? data.timeCourseData : [];
+  if (!updatesData.length || !timeCourseData.length) return;
+
+  function renderUpdates(key) {
+    const target = document.getElementById('updatesPanel');
+    const title = document.getElementById('updatesTitle');
+    const item = updatesData.find((entry) => entry.key === key);
+    if (!item || !target || !title) return;
+
+    title.textContent = `Outlined Mutations in ${item.key}`;
+    target.innerHTML = '';
+
+    const main = document.createElement('img');
+    main.src = item.main;
+    main.alt = `Outlined mutations ${item.key}`;
+    main.style.maxWidth = '100%';
+    main.style.height = 'auto';
+    main.style.display = 'block';
+    main.style.margin = '0 auto';
+    target.appendChild(main);
+
+    if (item.confirm) {
+      const confirmHeading = document.createElement('p');
+      confirmHeading.textContent = 'Confirmed Mutations';
+      confirmHeading.style.fontWeight = '600';
+      confirmHeading.style.margin = '8px 0';
+      target.appendChild(confirmHeading);
+
+      const confirm = document.createElement('img');
+      confirm.src = item.confirm;
+      confirm.alt = `Confirmed mutations ${item.key}`;
+      confirm.style.maxWidth = '100%';
+      confirm.style.height = 'auto';
+      confirm.style.display = 'block';
+      confirm.style.margin = '0 auto';
+      target.appendChild(confirm);
+    }
+
+    if (item.extra) {
+      const extra = document.createElement('img');
+      extra.src = item.extra;
+      extra.alt = `Additional panel ${item.key}`;
+      extra.style.maxWidth = '100%';
+      extra.style.height = 'auto';
+      extra.style.display = 'block';
+      extra.style.margin = '14px auto 0';
+      target.appendChild(extra);
+    }
+  }
+
+  function renderTimeCourse(key) {
+    const target = document.getElementById('timeCoursePanel');
+    const title = document.getElementById('timeCourseTitle');
+    const item = timeCourseData.find((entry) => entry.key === key);
+    if (!item || !target || !title) return;
+
+    title.textContent = `Time Course ${item.key}`;
+    target.innerHTML = '';
+
+    item.images.forEach((src, index) => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = `Time course ${item.key} panel ${index + 1}`;
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.display = 'block';
+      img.style.margin = '0 auto 12px';
+      target.appendChild(img);
+    });
+  }
+
+  const updatesSelect = document.getElementById('updatesSelect');
+  const timeCourseSelect = document.getElementById('timeCourseSelect');
+
+  if (updatesSelect) {
+    updatesData.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.key;
+      option.textContent = item.key;
+      updatesSelect.appendChild(option);
+    });
+
+    updatesSelect.value = updatesData[0].key;
+    renderUpdates(updatesSelect.value);
+    updatesSelect.addEventListener('change', (event) => renderUpdates(event.target.value));
+  }
+
+  if (timeCourseSelect) {
+    timeCourseData.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.key;
+      option.textContent = item.key;
+      timeCourseSelect.appendChild(option);
+    });
+
+    timeCourseSelect.value = timeCourseData[0].key;
+    renderTimeCourse(timeCourseSelect.value);
+    timeCourseSelect.addEventListener('change', (event) => renderTimeCourse(event.target.value));
+  }
+}
+
 function initPageWidgets() {
   const pageKind = document.body.dataset.pageKind;
   const pageKey = document.body.dataset.pageKey;
@@ -1029,5 +1146,7 @@ function initPageWidgets() {
     renderVariantWidget(pageKey);
   } else if (pageKind === 'component' && pageKey !== 'rna') {
     renderComponentWidget(pageKey);
+  } else if (pageKind === 'evolution') {
+    renderEvolutionWidget(pageKey);
   }
 }
