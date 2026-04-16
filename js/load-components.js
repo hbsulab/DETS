@@ -168,6 +168,12 @@ async function fetchTextCached(path) {
   return DETS_TEXT_CACHE.get(path);
 }
 
+function getLocalResourcePath(path) {
+  if (!path || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) return path;
+  const normalized = path.replace(/^\.\//, '');
+  return `${getResourcePrefix()}${normalized}`;
+}
+
 function parseFasta(text) {
   const records = [];
   let current = null;
@@ -184,6 +190,71 @@ function parseFasta(text) {
 
   if (current) records.push(current);
   return records;
+}
+
+function normalizeVariantLabel(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[()]/g, '');
+}
+
+function parseVariantClassTable(text) {
+  const rows = [];
+
+  text.split(/\r?\n/).forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    if (/^\d+$/.test(trimmed)) return;
+
+    const parts = trimmed.split(/\s+/);
+    if (parts.length < 3 || !/^\d+$/.test(parts[0])) return;
+
+    rows.push({
+      index: Number(parts[0]),
+      short: parts[1],
+      lineage: parts[2]
+    });
+  });
+
+  return rows;
+}
+
+function parseVariantRnaTable(text) {
+  const map = new Map();
+
+  text.split(/\r?\n/).forEach((line) => {
+    const match = line.match(/^\s*\d+\s+(\S+)\s+(.*)$/);
+    if (!match) return;
+
+    const lineage = match[1].trim();
+    const mutationText = match[2].trim().replace(/^"|"$/g, '');
+    if (!lineage || !mutationText || mutationText === '""') {
+      map.set(normalizeVariantLabel(lineage), []);
+      return;
+    }
+
+    const mutations = mutationText.split(';').map((mutation) => mutation.trim()).filter(Boolean);
+    map.set(normalizeVariantLabel(lineage), mutations);
+  });
+
+  return map;
+}
+
+function pickVariantRnaMutations(rnaMutationMap, data) {
+  const keys = [
+    data.workbookClass,
+    data.pageKey,
+    data.title
+  ].map((key) => normalizeVariantLabel(key));
+
+  for (const key of keys) {
+    if (rnaMutationMap.has(key)) {
+      return rnaMutationMap.get(key);
+    }
+  }
+
+  return data.rnaMutations;
 }
 
 function extractSpikeRnaFromGenome(genomeSequence) {
@@ -275,35 +346,91 @@ function applyMutations(sequence, mutations) {
   return characters.join('');
 }
 
-function renderSequenceComparison(referenceSequence, variantSequence) {
+function getMutationPositions(referenceSequence, variantSequence) {
+  const positions = [];
+  const length = Math.min(referenceSequence.length, variantSequence.length);
+  for (let index = 0; index < length; index += 1) {
+    if (referenceSequence[index] !== variantSequence[index]) {
+      positions.push(index + 1);
+    }
+  }
+  return positions;
+}
+
+function renderSequenceComparison(referenceSequence, variantSequence, options = {}) {
+  const mutationsOnly = Boolean(options.mutationsOnly);
+  const focusPosition = Number(options.focusPosition) || null;
   const chunkSize = 60;
   const rows = [];
 
   for (let index = 0; index < referenceSequence.length; index += chunkSize) {
     const referenceChunk = referenceSequence.slice(index, index + chunkSize);
     const variantChunk = variantSequence.slice(index, index + chunkSize);
+    const chunkStart = index + 1;
+    const chunkEnd = index + referenceChunk.length;
+    const chunkHasMutation = Array.from(referenceChunk).some((residue, chunkIndex) => residue !== (variantChunk[chunkIndex] || ''));
+    const chunkHasFocus = Boolean(focusPosition && focusPosition >= chunkStart && focusPosition <= chunkEnd);
+
+    if (mutationsOnly && !chunkHasMutation && !chunkHasFocus) continue;
 
     const refHtml = Array.from(referenceChunk).map((residue, chunkIndex) => {
       const variantResidue = variantChunk[chunkIndex] || '';
       const mutated = residue !== variantResidue;
-      return mutated ? `<span class="mutation-highlight">${escapeHtml(residue)}</span>` : escapeHtml(residue);
+      const position = index + chunkIndex + 1;
+      const focused = focusPosition === position;
+      if (mutated && focused) {
+        return `<span class="mutation-highlight" style="outline:2px solid #cc7a00;border-radius:2px;" data-seq-pos="${position}">${escapeHtml(residue)}</span>`;
+      }
+      if (mutated) {
+        return `<span class="mutation-highlight" data-seq-pos="${position}">${escapeHtml(residue)}</span>`;
+      }
+      if (focused) {
+        return `<span style="outline:2px solid #cc7a00;border-radius:2px;" data-seq-pos="${position}">${escapeHtml(residue)}</span>`;
+      }
+      return escapeHtml(residue);
     }).join('');
 
     const varHtml = Array.from(variantChunk).map((residue, chunkIndex) => {
       const referenceResidue = referenceChunk[chunkIndex] || '';
       const mutated = residue !== referenceResidue;
-      return mutated ? `<span class="mutation-highlight">${escapeHtml(residue)}</span>` : escapeHtml(residue);
+      const position = index + chunkIndex + 1;
+      const focused = focusPosition === position;
+      if (mutated && focused) {
+        return `<span class="mutation-highlight" style="outline:2px solid #cc7a00;border-radius:2px;" data-seq-pos="${position}">${escapeHtml(residue)}</span>`;
+      }
+      if (mutated) {
+        return `<span class="mutation-highlight" data-seq-pos="${position}">${escapeHtml(residue)}</span>`;
+      }
+      if (focused) {
+        return `<span style="outline:2px solid #cc7a00;border-radius:2px;" data-seq-pos="${position}">${escapeHtml(residue)}</span>`;
+      }
+      return escapeHtml(residue);
     }).join('');
 
-    rows.push(`<div class="sequence-row"><div class="sequence-label">Wuhan</div><div>${refHtml}</div></div>`);
-    rows.push(`<div class="sequence-row"><div class="sequence-label">Variant</div><div>${varHtml}</div></div>`);
+    rows.push(`<div class="sequence-row" ${chunkHasFocus ? 'data-focus-chunk="true"' : ''}><div class="sequence-label">Wuhan ${chunkStart}-${chunkEnd}</div><div>${refHtml}</div></div>`);
+    rows.push(`<div class="sequence-row" ${chunkHasFocus ? 'data-focus-chunk="true"' : ''}><div class="sequence-label">Variant ${chunkStart}-${chunkEnd}</div><div>${varHtml}</div></div>`);
+  }
+
+  if (!rows.length) {
+    return '<p class="sequence-note">No differences in the current view/filter.</p>';
   }
 
   return rows.join('');
 }
 
-function buildMutationPills(mutations) {
-  return mutations.map((mutation) => `<span class="mutation-pill">${escapeHtml(mutation)}</span>`).join('');
+function buildMutationPills(mutations, options = {}) {
+  const clickable = Boolean(options.clickable);
+  return mutations.map((mutation) => {
+    const normalized = String(mutation || '').trim();
+    const match = normalized.match(/^(?:[A-Z]|del)?(\d+)(?:[A-Z-]|-\d+.*)?$/i) || normalized.match(/^[A-Z-]?(\d+)[A-Z-]?$/i);
+    const position = match ? Number(match[1]) : null;
+
+    if (clickable && position) {
+      return `<button type="button" class="mutation-pill" data-aa-pos="${position}" title="Jump to amino-acid position ${position}">${escapeHtml(normalized)}</button>`;
+    }
+
+    return `<span class="mutation-pill">${escapeHtml(normalized)}</span>`;
+  }).join('');
 }
 
 function downloadText(filename, content, mimeType = 'text/plain;charset=utf-8') {
@@ -395,7 +522,9 @@ function renderStructureViewer(targetId, source, sourceType, style = {}) {
 
     viewer.addModel(source, sourceType);
     viewer.zoomTo();
-    viewer.addStyle({}, style.cartoon || { cartoon: { color: 'spectrum' } });
+    // Use ribbon as the default biomolecular representation.
+    const ribbonStyle = style.ribbon ? { ribbon: style.ribbon } : { ribbon: { color: 'chain' } };
+    viewer.addStyle({}, ribbonStyle);
     if (style.sidechains) {
       viewer.addStyle({ hetflag: false, atom: 'CA' }, style.sidechains);
     }
@@ -431,7 +560,19 @@ function renderVariantWidget(pageKey) {
 
   if (!data) return;
 
-  fetchTextCached('assets/data/Wuhan.fasta').then((fastaText) => {
+  Promise.all([
+    fetchTextCached(getLocalResourcePath('assets/data/Wuhan.fasta')),
+    fetchTextCached(getLocalResourcePath('assets/data/Variants.txt')),
+    fetchTextCached(getLocalResourcePath('assets/data/VariantsRNA.txt'))
+  ]).then(([fastaText, variantClassText, variantRnaText]) => {
+    const classRows = parseVariantClassTable(variantClassText);
+    const variantOptions = classRows.map((row) => ({
+      value: row.lineage,
+      label: `${row.short} (${row.lineage})`
+    }));
+    const rnaMutationMap = parseVariantRnaTable(variantRnaText);
+    const effectiveRnaMutations = pickVariantRnaMutations(rnaMutationMap, data);
+
     const genomeRecord = parseFasta(fastaText)[0];
     if (!genomeRecord) return;
 
@@ -464,7 +605,8 @@ function renderVariantWidget(pageKey) {
           <div>
             <label for="variantSelect-${pageKey}">Variant</label>
             <select id="variantSelect-${pageKey}">
-              <option value="${pageKey}">${escapeHtml(data.title)}</option>
+              <option value="${escapeHtml(data.workbookClass)}" selected>${escapeHtml(data.title)}</option>
+              ${variantOptions.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -478,15 +620,16 @@ function renderVariantWidget(pageKey) {
     seqSection.innerHTML = `
       <h2>Reference sequence, defining RNA, and spike mutations</h2>
       <p><strong>Reference:</strong> Wuhan-Hu-1 spike region extracted from <a href="../../assets/data/Wuhan.fasta" target="_blank" rel="noopener noreferrer">Wuhan.fasta</a> and cross-referenced with <a href="../../assets/data/CorrectedData_AfterTimeCorrection.xlsx" target="_blank" rel="noopener noreferrer">CorrectedData_AfterTimeCorrection.xlsx</a>.</p>
+      <p><strong>Variant catalogs:</strong> <a href="../../assets/data/Variants.txt" target="_blank" rel="noopener noreferrer">Variants.txt</a> and <a href="../../assets/data/VariantsRNA.txt" target="_blank" rel="noopener noreferrer">VariantsRNA.txt</a> for lineage labels and defining RNA mutations.</p>
       <p><strong>Workbook lineage label:</strong> ${escapeHtml(data.workbookClass)}</p>
       <div class="comparison-grid">
         <div class="comparison-card">
           <h4>Defining RNA mutations</h4>
-          <div class="mutations-list">${buildMutationPills(data.rnaMutations)}</div>
+          <div class="mutations-list">${buildMutationPills(effectiveRnaMutations)}</div>
         </div>
         <div class="comparison-card">
           <h4>Defining spike mutations</h4>
-          <div class="mutations-list">${buildMutationPills(data.proteinMutations)}</div>
+          <div class="mutations-list">${buildMutationPills(data.proteinMutations, { clickable: true })}</div>
         </div>
       </div>
       <div class="download-toolbar">
@@ -527,16 +670,34 @@ function renderVariantWidget(pageKey) {
         <a href="../../assets/data/CorrectedData_AfterTimeCorrection.xlsx" target="_blank" rel="noopener noreferrer">Download corrected workbook</a>
         <a href="../../assets/data/InputVariantsLMCM_20260118.xlsx" target="_blank" rel="noopener noreferrer">Download input workbook</a>
       </div>
-      <p class="sequence-note">Filters include month, variant label, and EPI_ID. Downloads are generated from the same reference files used by this page and linked workbooks.</p>
+      <p class="sequence-note">Filters include month, variant label, and EPI_ID. Downloads are generated from the same reference files and variant tables used by this page.</p>
     `;
 
     const compareSection = document.createElement('div');
     compareSection.className = 'visualization-block';
     compareSection.innerHTML = `
       <h3>Interactive Wuhan vs variant sequence compare</h3>
+      <div class="download-toolbar">
+        <div>
+          <label for="comparePosition-${pageKey}">Amino-acid position</label>
+          <input id="comparePosition-${pageKey}" type="number" min="1" max="${referenceProtein.length}" value="" placeholder="e.g. 452">
+        </div>
+        <div>
+          <label for="compareMutOnly-${pageKey}">View filter</label>
+          <div style="padding-top:10px;">
+            <input id="compareMutOnly-${pageKey}" type="checkbox">
+            <label for="compareMutOnly-${pageKey}">Show mutation chunks only</label>
+          </div>
+        </div>
+      </div>
+      <div class="button-row">
+        <button type="button" id="compareGo-${pageKey}">Go to position</button>
+        <button type="button" id="compareReset-${pageKey}">Reset compare view</button>
+      </div>
       <div class="viz-placeholder">
         <div class="sequence-viewer" id="sequenceViewer-${pageKey}">${renderSequenceComparison(referenceProtein, variantProtein)}</div>
       </div>
+      <p class="sequence-note" id="compareStatus-${pageKey}"></p>
       <p class="sequence-note">Mutated positions are highlighted in both rows. The view is generated from the Wuhan spike reference and the lineage-defining mutation list.</p>
     `;
 
@@ -558,7 +719,7 @@ function renderVariantWidget(pageKey) {
     const pdbSelect = structureSection.querySelector(`#pdbSelect-${pageKey}`);
     const loadVariantStructure = (pdbId) => {
       fetchTextCached(`https://files.rcsb.org/download/${pdbId}.pdb`).then((pdbText) => {
-        renderStructureViewer(viewerTargetId, pdbText, 'pdb', { cartoon: { color: 'spectrum' } });
+        renderStructureViewer(viewerTargetId, pdbText, 'pdb', { ribbon: { color: 'chain' } });
       }).catch(() => {
         const target = document.getElementById(viewerTargetId);
         if (target) target.innerHTML = `<p style="padding:20px;">Unable to load ${pdbId}. Open it in RCSB or retry.</p>`;
@@ -570,20 +731,116 @@ function renderVariantWidget(pageKey) {
       pdbSelect.addEventListener('change', () => loadVariantStructure(pdbSelect.value));
     }
 
+    const mutationModeSelect = seqSection.querySelector(`#mutationSelect-${pageKey}`);
+    const sequenceViewer = compareSection.querySelector(`#sequenceViewer-${pageKey}`);
+    const compareStatus = compareSection.querySelector(`#compareStatus-${pageKey}`);
+    const comparePositionInput = compareSection.querySelector(`#comparePosition-${pageKey}`);
+    const compareMutOnlyToggle = compareSection.querySelector(`#compareMutOnly-${pageKey}`);
+    const compareGoButton = compareSection.querySelector(`#compareGo-${pageKey}`);
+    const compareResetButton = compareSection.querySelector(`#compareReset-${pageKey}`);
+    let compareFocusPosition = null;
+
+    const getCompareProteinMutations = () => {
+      if (!mutationModeSelect) return data.proteinMutations;
+      const mode = mutationModeSelect.value;
+      if (mode === 'rna') return [];
+      return data.proteinMutations;
+    };
+
+    const updateSequenceComparison = () => {
+      const compareVariantProtein = applyMutations(referenceProtein, getCompareProteinMutations());
+      const mutationPositions = getMutationPositions(referenceProtein, compareVariantProtein);
+      const mode = mutationModeSelect ? mutationModeSelect.value : 'all';
+      const focusPosition = compareFocusPosition && compareFocusPosition >= 1 && compareFocusPosition <= referenceProtein.length ? compareFocusPosition : null;
+
+      sequenceViewer.innerHTML = renderSequenceComparison(referenceProtein, compareVariantProtein, {
+        mutationsOnly: compareMutOnlyToggle ? compareMutOnlyToggle.checked : false,
+        focusPosition
+      });
+
+      if (compareStatus) {
+        if (mode === 'rna') {
+          compareStatus.textContent = 'RNA-only mode selected: spike amino-acid sequence remains unchanged.';
+        } else {
+          compareStatus.textContent = `Detected ${mutationPositions.length} amino-acid differences${focusPosition ? `; focused position: ${focusPosition}` : ''}.`;
+        }
+      }
+
+      if (focusPosition) {
+        const focusChunk = sequenceViewer.querySelector('[data-focus-chunk="true"]');
+        if (focusChunk) {
+          focusChunk.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    };
+
+    if (mutationModeSelect) {
+      mutationModeSelect.addEventListener('change', updateSequenceComparison);
+    }
+
+    if (compareMutOnlyToggle) {
+      compareMutOnlyToggle.addEventListener('change', updateSequenceComparison);
+    }
+
+    if (compareGoButton) {
+      compareGoButton.addEventListener('click', () => {
+        const value = Number(comparePositionInput ? comparePositionInput.value : 0);
+        compareFocusPosition = Number.isFinite(value) && value >= 1 ? Math.floor(value) : null;
+        updateSequenceComparison();
+      });
+    }
+
+    if (comparePositionInput) {
+      comparePositionInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          const value = Number(comparePositionInput.value);
+          compareFocusPosition = Number.isFinite(value) && value >= 1 ? Math.floor(value) : null;
+          updateSequenceComparison();
+        }
+      });
+    }
+
+    if (compareResetButton) {
+      compareResetButton.addEventListener('click', () => {
+        compareFocusPosition = null;
+        if (comparePositionInput) comparePositionInput.value = '';
+        if (compareMutOnlyToggle) compareMutOnlyToggle.checked = false;
+        updateSequenceComparison();
+      });
+    }
+
+    seqSection.querySelectorAll('[data-aa-pos]').forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const value = Number(pill.getAttribute('data-aa-pos'));
+        if (!Number.isFinite(value) || value < 1) return;
+        compareFocusPosition = Math.floor(value);
+        if (comparePositionInput) comparePositionInput.value = String(compareFocusPosition);
+        if (mutationModeSelect && mutationModeSelect.value === 'rna') {
+          mutationModeSelect.value = 'protein';
+        }
+        updateSequenceComparison();
+      });
+    });
+
+    updateSequenceComparison();
+
     seqSection.querySelectorAll('[data-download]').forEach((button) => {
       button.addEventListener('click', () => {
         const month = seqSection.querySelector(`#monthSelect-${pageKey}`).value;
         const epiId = seqSection.querySelector(`#epiSelect-${pageKey}`).value;
+        const selectedVariant = structureSection.querySelector(`#variantSelect-${pageKey}`).value;
         const mutationMode = seqSection.querySelector(`#mutationSelect-${pageKey}`).value;
-        const selectedMutations = mutationMode === 'protein' ? data.proteinMutations : mutationMode === 'rna' ? data.rnaMutations : data.proteinMutations.concat(data.rnaMutations);
+        const selectedMutations = mutationMode === 'protein' ? data.proteinMutations : mutationMode === 'rna' ? effectiveRnaMutations : data.proteinMutations.concat(effectiveRnaMutations);
 
         const summary = [
           `Variant\t${data.title}`,
+          `Variant filter\t${selectedVariant}`,
           `Month\t${month}`,
           `EPI_ID\t${epiId}`,
           `Mutation mode\t${mutationMode}`,
           `Protein mutations\t${data.proteinMutations.join('; ')}`,
-          `RNA mutations\t${data.rnaMutations.join('; ')}`,
+          `RNA mutations\t${effectiveRnaMutations.join('; ')}`,
           `Selected mutation count\t${selectedMutations.length}`
         ].join('\n');
 
@@ -605,8 +862,8 @@ function renderVariantWidget(pageKey) {
         if (button.dataset.download === 'selection') {
           const selectedIds = epiId === 'all' ? data.epiIds.join('; ') : epiId;
           const tsv = [
-            'Variant\tMonth\tEPI_ID\tWorkbookClass\tMutationMode\tMutationCount',
-            `${data.title}\t${month}\t${selectedIds}\t${data.workbookClass}\t${mutationMode}\t${selectedMutations.length}`
+            'Variant\tVariantFilter\tMonth\tEPI_ID\tWorkbookClass\tMutationMode\tMutationCount',
+            `${data.title}\t${selectedVariant}\t${month}\t${selectedIds}\t${data.workbookClass}\t${mutationMode}\t${selectedMutations.length}`
           ].join('\n');
           downloadText(`${pageKey}-${month}-selection.tsv`, tsv, 'text/tab-separated-values;charset=utf-8');
           return;
@@ -624,7 +881,7 @@ function renderComponentWidget(pageKey) {
   const container = document.querySelector('#main_container .container');
   if (!container) return;
 
-  fetchTextCached('assets/data/Wuhan.fasta').then((fastaText) => {
+  fetchTextCached(getLocalResourcePath('assets/data/Wuhan.fasta')).then((fastaText) => {
     const genomeRecord = parseFasta(fastaText)[0];
     if (!genomeRecord) return;
 
@@ -699,7 +956,7 @@ function renderComponentWidget(pageKey) {
       `;
 
       fetchTextCached('https://files.rcsb.org/download/6VSB.pdb').then((pdbText) => {
-        renderStructureViewer('spike-structure-viewer', pdbText, 'pdb', { cartoon: { color: 'spectrum' } });
+        renderStructureViewer('spike-structure-viewer', pdbText, 'pdb', { ribbon: { color: 'chain' } });
       }).catch(() => {
         const target = document.getElementById('spike-structure-viewer');
         if (target) target.innerHTML = '<p style="padding:20px;">Spike structure loading failed. Open 6VSB or 7KRR in an external structure viewer.</p>';
@@ -718,7 +975,7 @@ function renderComponentWidget(pageKey) {
         </div>
       `;
 
-      fetchTextCached('assets/data/7UO7_seq-holo.fasta').then((rdrpFastaText) => {
+      fetchTextCached(getLocalResourcePath('assets/data/7UO7_seq-holo.fasta')).then((rdrpFastaText) => {
         const rdrpRecord = parseFasta(rdrpFastaText)[0];
         const target = spikeSection.querySelector('#rdrp-sequence-viewer');
         if (target && rdrpRecord) {
@@ -735,8 +992,8 @@ function renderComponentWidget(pageKey) {
         </div>
       `;
 
-      fetchTextCached('assets/data/7uo7-holo.pdb').then((pdbText) => {
-        renderStructureViewer('rdrp-structure-viewer', pdbText, 'pdb', { cartoon: { color: 'spectrum' } });
+      fetchTextCached(getLocalResourcePath('assets/data/7uo7-holo.pdb')).then((pdbText) => {
+        renderStructureViewer('rdrp-structure-viewer', pdbText, 'pdb', { ribbon: { color: 'chain' } });
       });
     }
 
