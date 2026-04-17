@@ -210,14 +210,87 @@ function parseVariantClassTable(text) {
     const parts = trimmed.split(/\s+/);
     if (parts.length < 3 || !/^\d+$/.test(parts[0])) return;
 
+    let parentIndex = null;
+    for (let index = parts.length - 1; index >= 3; index -= 1) {
+      if (/^\d+$/.test(parts[index])) {
+        parentIndex = Number(parts[index]);
+        break;
+      }
+    }
+
     rows.push({
       index: Number(parts[0]),
       short: parts[1],
-      lineage: parts[2]
+      lineage: parts[2],
+      parentIndex
     });
   });
 
   return rows;
+}
+
+function findVariantClassRow(classRows, data) {
+  const lookup = new Map();
+  classRows.forEach((row) => {
+    lookup.set(normalizeVariantLabel(row.short), row);
+    lookup.set(normalizeVariantLabel(row.lineage), row);
+  });
+
+  const keys = [data.workbookClass, data.pageKey, data.title]
+    .map((value) => normalizeVariantLabel(value))
+    .filter(Boolean);
+
+  for (const key of keys) {
+    if (lookup.has(key)) return lookup.get(key);
+  }
+
+  for (const key of keys) {
+    const fuzzy = classRows.find((row) => {
+      const shortKey = normalizeVariantLabel(row.short);
+      const lineageKey = normalizeVariantLabel(row.lineage);
+      return shortKey.includes(key) || key.includes(shortKey) || lineageKey.includes(key) || key.includes(lineageKey);
+    });
+    if (fuzzy) return fuzzy;
+  }
+
+  return null;
+}
+
+function buildVariantPathFromClassRows(classRows, targetRow) {
+  if (!targetRow) return [];
+
+  const byIndex = new Map(classRows.map((row) => [row.index, row]));
+  const visited = new Set();
+  const chain = [];
+  let current = targetRow;
+
+  while (current && !visited.has(current.index)) {
+    visited.add(current.index);
+    chain.push(current);
+    if (!Number.isInteger(current.parentIndex)) break;
+    current = byIndex.get(current.parentIndex) || null;
+  }
+
+  const labels = chain
+    .reverse()
+    .map((row) => (normalizeVariantLabel(row.short) === 'original' ? 'Wuhan' : row.short));
+
+  if (!labels.length || labels[0] !== 'Wuhan') labels.unshift('Wuhan');
+  return labels;
+}
+
+function buildPhyloResourceLinks(targetRow, data) {
+  const nextstrainUrl = 'https://nextstrain.org/ncov/gisaid/global/6m';
+  const covariantsToken = String((targetRow && targetRow.short) || data.pageKey || data.title || '')
+    .replace(/\s+/g, '')
+    .replace(/[()]/g, '');
+  const covariantsUrl = `https://covariants.org/variants/${encodeURIComponent(covariantsToken)}`;
+  const lineageLabel = targetRow ? `${targetRow.short} (${targetRow.lineage})` : data.title;
+
+  return `
+    <p class="sequence-note">Live phylogenetic context: <a href="${nextstrainUrl}" target="_blank" rel="noopener noreferrer">Nextstrain global tree</a> and <a href="${covariantsUrl}" target="_blank" rel="noopener noreferrer">CoVariants lineage page</a>.</p>
+    <p class="sequence-note">Suggested query lineage: <strong>${escapeHtml(lineageLabel)}</strong>. The subtree chain above follows curated Wuhan-to-lineage transitions used in this page, aligned with Nextstrain/CoVariants-style VOC/VOI/VUM progression.</p>
+  `;
 }
 
 function parseVariantRnaTable(text) {
@@ -515,7 +588,7 @@ function renderStructureViewer(targetId, source, sourceType, style = {}) {
     target.innerHTML = '';
     
     const viewer = $3Dmol.createViewer(target, {
-      backgroundColor: 'transparent',
+      backgroundColor: '#f6fbfe',
       disableFog: true,
       defaultcolors: $3Dmol.rasmolElementColors
     });
@@ -523,9 +596,8 @@ function renderStructureViewer(targetId, source, sourceType, style = {}) {
     viewer.addModel(source, sourceType);
     viewer.zoomTo();
     // Use cartoon as the default biomolecular representation.
-    const cartoonSpec = style.cartoon || { color: 'chain' };
-    viewer.setStyle({}, {});
-    viewer.addStyle({}, { cartoon: cartoonSpec });
+    const cartoonSpec = style.cartoon || { color: 'spectrum' };
+    viewer.setStyle({}, { cartoon: cartoonSpec });
     if (style.sidechains) {
       viewer.addStyle({ hetflag: false, atom: 'CA' }, style.sidechains);
     }
@@ -571,6 +643,9 @@ function renderVariantWidget(pageKey) {
       value: row.lineage,
       label: `${row.short} (${row.lineage})`
     }));
+    const targetClassRow = findVariantClassRow(classRows, data);
+    const inferredPath = buildVariantPathFromClassRows(classRows, targetClassRow);
+    const treeNodes = Array.isArray(data.path) && data.path.length >= 2 ? data.path : (inferredPath.length >= 2 ? inferredPath : ['Wuhan', data.title]);
     const rnaMutationMap = parseVariantRnaTable(variantRnaText);
     const effectiveRnaMutations = pickVariantRnaMutations(rnaMutationMap, data);
 
@@ -587,14 +662,14 @@ function renderVariantWidget(pageKey) {
     treeSection.className = 'visualization-block';
     treeSection.innerHTML = `
       <h3>Phylogenetic Subtree from Wuhan</h3>
-      <div class="viz-placeholder">${createTreeSvg(data.path, `${data.title}: Wuhan to lineage subset`)}</div>
-      <p class="sequence-note">Suggested interactive resources: <a href="https://nextstrain.org/ncov" target="_blank" rel="noopener noreferrer">Nextstrain</a>, <a href="https://outbreak.info/" target="_blank" rel="noopener noreferrer">outbreak.info</a>, <a href="https://microreact.org/" target="_blank" rel="noopener noreferrer">Microreact</a>, and <a href="https://usher-wiki.readthedocs.io/" target="_blank" rel="noopener noreferrer">UShER</a>. The lineage path shown here is a compact subtree for quick navigation.</p>
+      <div class="viz-placeholder">${createTreeSvg(treeNodes, `${data.title}: Wuhan to lineage subset`)}</div>
+      ${buildPhyloResourceLinks(targetClassRow, data)}
     `;
 
     const structureSection = document.createElement('div');
     structureSection.className = 'visualization-block';
     structureSection.innerHTML = `
-      <h3>Interactive spike structure by PDB ID</h3>
+      <h3>Interactive spike structure and sequence by PDB ID</h3>
       <div class="feature-panel">
         <div class="download-toolbar">
           <div>
@@ -603,16 +678,11 @@ function renderVariantWidget(pageKey) {
               ${data.pdbIds.map((pdbId) => `<option value="${pdbId}">${pdbId}</option>`).join('')}
             </select>
           </div>
-          <div>
-            <label for="variantSelect-${pageKey}">Variant</label>
-            <select id="variantSelect-${pageKey}">
-              <option value="${escapeHtml(data.workbookClass)}" selected>${escapeHtml(data.title)}</option>
-              ${variantOptions.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
-            </select>
-          </div>
         </div>
-        <div id="variant-structure-viewer-${pageKey}" class="structure-frame"></div>
-        <p class="sequence-note">The viewer fetches the selected structure from RCSB and supports rotation, zoom, and residue-level inspection.</p>
+        <div class="structure-frame" style="height: 780px; min-height: 780px;">
+          <iframe id="variant-structure-iframe-${pageKey}" src="" title="RCSB 3D Protein Feature View for ${escapeHtml(data.title)}"></iframe>
+        </div>
+        <p class="sequence-note">The embedded RCSB 3D Protein Feature View provides sequence, residue clicking, and linked 3D structure highlighting. Open the <a id="variant-structure-link-${pageKey}" href="#" target="_blank" rel="noopener noreferrer">full-page RCSB view</a> if you want more space.</p>
       </div>
     `;
 
@@ -716,15 +786,18 @@ function renderVariantWidget(pageKey) {
       container.appendChild(compareSection);
     }
 
-    const viewerTargetId = `variant-structure-viewer-${pageKey}`;
     const pdbSelect = structureSection.querySelector(`#pdbSelect-${pageKey}`);
+    const variantFrame = structureSection.querySelector(`#variant-structure-iframe-${pageKey}`);
+    const variantLink = structureSection.querySelector(`#variant-structure-link-${pageKey}`);
     const loadVariantStructure = (pdbId) => {
-      fetchTextCached(`https://files.rcsb.org/view/${pdbId}.cif`).then((cifText) => {
-        renderStructureViewer(viewerTargetId, cifText, 'cif', { cartoon: { color: 'chain' } });
-      }).catch(() => {
-        const target = document.getElementById(viewerTargetId);
-        if (target) target.innerHTML = `<p style="padding:20px;">Unable to load ${pdbId} from RCSB. Open it in RCSB or retry.</p>`;
-      });
+      const embedUrl = `https://www.rcsb.org/3d-sequence/${encodeURIComponent(pdbId)}?assemblyId=1&embedded=1`;
+      const fullUrl = `https://www.rcsb.org/3d-sequence/${encodeURIComponent(pdbId)}?assemblyId=1`;
+      if (variantFrame) {
+        variantFrame.src = embedUrl;
+      }
+      if (variantLink) {
+        variantLink.href = fullUrl;
+      }
     };
 
     if (pdbSelect && pdbSelect.value) {
@@ -830,7 +903,7 @@ function renderVariantWidget(pageKey) {
       button.addEventListener('click', () => {
         const month = seqSection.querySelector(`#monthSelect-${pageKey}`).value;
         const epiId = seqSection.querySelector(`#epiSelect-${pageKey}`).value;
-        const selectedVariant = structureSection.querySelector(`#variantSelect-${pageKey}`).value;
+        const selectedVariant = data.workbookClass;
         const mutationMode = seqSection.querySelector(`#mutationSelect-${pageKey}`).value;
         const selectedMutations = mutationMode === 'protein' ? data.proteinMutations : mutationMode === 'rna' ? effectiveRnaMutations : data.proteinMutations.concat(effectiveRnaMutations);
 
@@ -949,19 +1022,14 @@ function renderComponentWidget(pageKey) {
 
       structureSection.className = 'visualization-block';
       structureSection.innerHTML = `
-        <h3>Interactive Wuhan spike structure</h3>
+        <h3>Interactive Wuhan spike structure and sequence</h3>
         <div class="feature-panel">
-          <div id="spike-structure-viewer" class="structure-frame"></div>
-          <p class="sequence-note">This viewer supports rotation, zoom, and residue-level inspection through the embedded 3Dmol.js interface. If you prefer another viewer, Mol* and NGL are also solid options for structure embedding.</p>
+          <div class="structure-frame" style="height: 760px; min-height: 760px;">
+            <iframe src="https://www.rcsb.org/3d-sequence/6VSB?assemblyId=1&embedded=1" title="RCSB 3D Protein Feature View for spike"></iframe>
+          </div>
+          <p class="sequence-note">The embedded RCSB viewer provides the sequence panel, residue clicking, and linked structure highlighting. Use the <a href="https://www.rcsb.org/3d-sequence/6VSB?assemblyId=1" target="_blank" rel="noopener noreferrer">full RCSB 3D Protein Feature View</a> if the embed is constrained by your browser.</p>
         </div>
       `;
-
-      fetchTextCached('https://files.rcsb.org/download/6VSB.pdb').then((pdbText) => {
-        renderStructureViewer('spike-structure-viewer', pdbText, 'pdb', { cartoon: { color: 'chain' } });
-      }).catch(() => {
-        const target = document.getElementById('spike-structure-viewer');
-        if (target) target.innerHTML = '<p style="padding:20px;">Spike structure loading failed. Open 6VSB or 7KRR in an external structure viewer.</p>';
-      });
     }
 
     if (pageKey === 'rdrp') {
@@ -986,16 +1054,14 @@ function renderComponentWidget(pageKey) {
 
       structureSection.className = 'visualization-block';
       structureSection.innerHTML = `
-        <h3>Interactive RdRp structure</h3>
+        <h3>Interactive RdRp structure and sequence</h3>
         <div class="feature-panel">
-          <div id="rdrp-structure-viewer" class="structure-frame"></div>
-          <p class="sequence-note">The local 7UO7 PDB file is loaded directly, so users can rotate, zoom, and inspect the catalytic core in the browser.</p>
+          <div class="structure-frame" style="height: 760px; min-height: 760px;">
+            <iframe src="https://www.rcsb.org/3d-sequence/7UO7?assemblyId=1&embedded=1" title="RCSB 3D Protein Feature View for RdRp"></iframe>
+          </div>
+          <p class="sequence-note">The embedded RCSB viewer provides sequence-residue interaction and the linked 3D structure view for 7UO7. Use the <a href="https://www.rcsb.org/3d-sequence/7UO7?assemblyId=1" target="_blank" rel="noopener noreferrer">full RCSB 3D Protein Feature View</a> if you need the full-page experience.</p>
         </div>
       `;
-
-      fetchTextCached(getLocalResourcePath('assets/data/7uo7-holo.pdb')).then((pdbText) => {
-        renderStructureViewer('rdrp-structure-viewer', pdbText, 'pdb', { cartoon: { color: 'chain' } });
-      });
     }
 
     const introBlock = container.querySelector('.text-block');
