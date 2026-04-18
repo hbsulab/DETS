@@ -1048,7 +1048,14 @@ function renderComponentWidget(pageKey) {
         const rdrpRecord = parseFasta(rdrpFastaText)[0];
         const target = spikeSection.querySelector('#rdrp-sequence-viewer');
         if (target && rdrpRecord) {
-          target.innerHTML = escapeHtml((rdrpRecord.sequence.match(/.{1,60}/g) || [rdrpRecord.sequence]).join('\n'));
+          target.textContent = (rdrpRecord.sequence.match(/.{1,60}/g) || [rdrpRecord.sequence]).join('\n');
+          target.style.whiteSpace = 'pre-wrap';
+          target.style.overflowWrap = 'anywhere';
+          target.style.wordBreak = 'break-word';
+          target.style.textAlign = 'left';
+          target.style.width = '100%';
+          target.style.maxWidth = '820px';
+          target.style.margin = '0 auto';
         }
       });
 
