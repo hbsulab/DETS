@@ -24,9 +24,52 @@ document.addEventListener('DOMContentLoaded', () => {
   ]).then(() => {
     initDropdowns();
     initPageWidgets();
+    initReferenceLinks();
     initPdfCanvasRenders();
   });
 });
+
+function initReferenceLinks() {
+  const headings = Array.from(document.querySelectorAll('h2, h3, h4, h5'));
+  const referenceHeadings = headings.filter((heading) => /reference/i.test(heading.textContent || ''));
+  const processedScopes = new Set();
+
+  referenceHeadings.forEach((heading) => {
+    const scope = heading.parentElement;
+    if (!scope || processedScopes.has(scope)) {
+      return;
+    }
+    processedScopes.add(scope);
+
+    scope.querySelectorAll('li').forEach((item) => {
+      if (item.querySelector('a')) {
+        return;
+      }
+
+      const text = (item.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text) {
+        return;
+      }
+
+      const doiMatch = text.match(/\b10\.\d{4,9}\/[\w.()\-;:+/]+/i);
+      if (!doiMatch) {
+        return;
+      }
+
+      const doi = doiMatch[0].replace(/[.,;:]$/, '');
+
+      const link = document.createElement('a');
+      link.href = `https://doi.org/${encodeURIComponent(doi)}`;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.className = 'reference-auto-link';
+      link.textContent = 'DOI';
+
+      item.appendChild(document.createTextNode(' '));
+      item.appendChild(link);
+    });
+  });
+}
 
 function loadPdfJsLibrary() {
   if (window.pdfjsLib) {
@@ -745,9 +788,11 @@ function appendProfileSupplement(profileSection, title, sourceSection) {
 
 function applyVariantPageLayout(container) {
   if (!container) return;
+  const pageKey = document.body ? document.body.dataset.pageKey : '';
 
   const referenceSection = findSectionByHeading(container, 'Reference sequence, defining RNA, and spike mutations');
   const cladeSection = findSectionByHeading(container, 'Clade Relationship Overview');
+  const omicronFiguresSection = container.querySelector('.omicron-evolution-figures');
   const interactiveSection = findSectionByHeading(container, 'Interactive spike structure and sequence by PDB ID');
   const profileSection = findSectionByHeading(container, ['Variant Introduction', 'Variant Profile']);
   const definingSection = findSectionByHeading(container, 'Defining Mutations');
@@ -779,6 +824,27 @@ function applyVariantPageLayout(container) {
     }
   }
 
+  if (definingSection) {
+    const definingHeading = definingSection.querySelector('h2, h3, h4');
+    if (definingHeading) {
+      definingHeading.textContent = 'Important Mutations';
+    }
+  }
+
+  if (sequenceSection) {
+    const sequenceHeading = sequenceSection.querySelector('h2, h3, h4');
+    if (sequenceHeading) {
+      sequenceHeading.textContent = 'Spike Sequences';
+    }
+  }
+
+  if (spikeSection) {
+    const spikeHeading = spikeSection.querySelector('h2, h3, h4');
+    if (spikeHeading) {
+      spikeHeading.textContent = 'Spike Structures';
+    }
+  }
+
   const removeHeadings = new Set([
     'phylogenetic subtree from wuhan',
     'growth and spread timeline',
@@ -801,31 +867,84 @@ function applyVariantPageLayout(container) {
     'phylogenetic tree overview'
   ]);
 
+  const legacyHeadingMap = {
+    jn1: new Set([
+      'background',
+      'jn.1 mutations',
+      'featured mutation: l455s',
+      'l445',
+      'l445s',
+      'main mutations',
+      'ba.2.86'
+    ]),
+    kp2: new Set([
+      'background',
+      'evolution of omicron subvariants',
+      'kp.2 mutations',
+      '2024.03 outlined',
+      'featured mutations: l455s, f456l',
+      'kp.2 spike conformation',
+      'main mutations',
+      'kp.2 rbd',
+      'kp.2 ctd&s2'
+    ])
+  };
+  const legacyHeadingSet = legacyHeadingMap[pageKey] || null;
+  const legacySections = [];
+  let legacyNarrativeCaptured = false;
+
   Array.from(container.children).forEach((child) => {
     if (!child || child.nodeType !== Node.ELEMENT_NODE) return;
     const heading = getSectionHeading(child);
+
+    if (legacyHeadingSet && heading && legacyHeadingSet.has(heading)) {
+      legacySections.push(child);
+      return;
+    }
+
+    if (
+      pageKey === 'jn1' &&
+      !heading &&
+      child.classList.contains('text-block') &&
+      !legacyNarrativeCaptured &&
+      (child.textContent || '').includes('The L455S mutation occurs within the receptor-binding domain')
+    ) {
+      legacyNarrativeCaptured = true;
+      legacySections.push(child);
+      return;
+    }
+
     if (removeHeadings.has(heading)) {
       child.remove();
     }
   });
 
-  let tripleRow = container.querySelector('.variant-triple-row');
-  if (!tripleRow && definingSection && sequenceSection && spikeSection) {
-    tripleRow = document.createElement('div');
-    tripleRow.className = 'variant-triple-row';
-    tripleRow.appendChild(definingSection);
-    tripleRow.appendChild(sequenceSection);
-    tripleRow.appendChild(spikeSection);
+  let profileMutationRow = container.querySelector('.variant-pair-row-profile-mutations');
+  if (!profileMutationRow && profileSection && definingSection) {
+    profileMutationRow = document.createElement('div');
+    profileMutationRow.className = 'variant-pair-row variant-pair-row-profile-mutations';
+    profileMutationRow.appendChild(profileSection);
+    profileMutationRow.appendChild(definingSection);
+  }
+
+  let sequenceStructureRow = container.querySelector('.variant-pair-row-sequences-structures');
+  if (!sequenceStructureRow && sequenceSection && spikeSection) {
+    sequenceStructureRow = document.createElement('div');
+    sequenceStructureRow.className = 'variant-pair-row variant-pair-row-sequences-structures';
+    sequenceStructureRow.appendChild(sequenceSection);
+    sequenceStructureRow.appendChild(spikeSection);
   }
 
   const pageHeader = container.querySelector('.page-header');
   const orderedSections = [
     referenceSection,
     cladeSection,
+    omicronFiguresSection,
     interactiveSection,
-    profileSection,
-    tripleRow,
-    phenotypicSection
+    profileMutationRow,
+    sequenceStructureRow,
+    phenotypicSection,
+    ...legacySections
   ].filter(Boolean);
 
   if (referencesSection) {
@@ -909,6 +1028,36 @@ function renderVariantWidget(pageKey) {
       ${buildPhyloResourceLinks(targetClassRow, data)}
     `;
 
+    const pdbTitleById = {
+      '7R15': 'Alpha variant SARS-CoV-2 spike with two erect RBDs',
+      '7R14': 'Alpha variant SARS-CoV-2 spike with one erect RBD',
+      '7R13': 'Alpha variant SARS-CoV-2 spike in closed conformation',
+      '7R17': 'Beta variant SARS-CoV-2 spike with two erect RBDs',
+      '7R16': 'Beta variant SARS-CoV-2 spike with one erect RBD',
+      '7VX1': 'SARS-CoV-2 Beta variant spike protein in open state',
+      '8HRI': 'SARS-CoV-2 Delta variant spike protein',
+      '7VHH': 'Delta variant SARS-CoV-2 spike protein',
+      '7W92': 'Open-state SARS-CoV-2 Delta variant spike protein',
+      '7XIW': 'SARS-CoV-2 Omicron BA.2 variant spike (state 1)',
+      '7XIX': 'SARS-CoV-2 Omicron BA.2 variant spike (state 2)',
+      '7XO7': 'SARS-CoV-2 Omicron BA.2 spike trimer with ACE2 bound',
+      '7XNQ': 'SARS-CoV-2 Omicron BA.4 variant spike',
+      '8CIN': 'BA.4 spike glycoprotein in complex with BA.4/5-targeting Fab',
+      '8XSJ': 'SARS-CoV-2 Omicron BA.4 RBD in ACE2/antibody complex context',
+      '8X4H': 'SARS-CoV-2 JN.1 spike structure',
+      '9D8I': 'JN.1 SARS-CoV-2 spike in 1-up conformation',
+      '9D8H': 'JN.1 SARS-CoV-2 spike in 3-down conformation',
+      '9D8L': 'KP.2 SARS-CoV-2 spike in 2-up conformation',
+      '9D8K': 'KP.2 SARS-CoV-2 spike in 1-up conformation',
+      '9D8J': 'KP.2 SARS-CoV-2 spike in 3-down conformation'
+    };
+
+    const getPdbOptionLabel = (pdbId) => {
+      const key = String(pdbId || '').toUpperCase();
+      const title = pdbTitleById[key];
+      return title ? `${key} - ${title}` : key;
+    };
+
     const structureSection = document.createElement('div');
     structureSection.className = 'visualization-block';
     structureSection.innerHTML = `
@@ -918,7 +1067,7 @@ function renderVariantWidget(pageKey) {
           <div>
             <label for="pdbSelect-${pageKey}">PDB ID</label>
             <select id="pdbSelect-${pageKey}">
-              ${data.pdbIds.map((pdbId) => `<option value="${pdbId}">${pdbId}</option>`).join('')}
+              ${data.pdbIds.map((pdbId) => `<option value="${escapeHtml(pdbId)}">${escapeHtml(getPdbOptionLabel(pdbId))}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -1479,6 +1628,9 @@ function initCladeNavigationLinks() {
   if (!cladeObjects.length) {
     return;
   }
+  const isTaxonomyPage = Boolean(document.querySelector('.subpage-grid .subpage-card[href]'));
+  const isVariantPage = document.body && document.body.dataset.pageKind === 'variant';
+  const shouldHighlightLinkedNodes = isTaxonomyPage || isVariantPage;
 
   const variantLinkMap = [
     { tokens: ['20i (alpha, b.1.1.7)'], href: 'pages/variants/alpha.html' },
@@ -1506,6 +1658,155 @@ function initCladeNavigationLinks() {
     }
 
     const nodes = Array.from(svgDoc.querySelectorAll('g.node'));
+    const toKey = (x, y) => `${Number(x).toString()},${Number(y).toString()}`;
+    const parseTranslate = (transform) => {
+      const match = /translate\(([^,]+),([^)]+)\)/.exec(transform || '');
+      if (!match) {
+        return null;
+      }
+      return toKey(match[1], match[2]);
+    };
+    const parsePathEndpoints = (d) => {
+      const values = (d || '').match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi);
+      if (!values || values.length < 4) {
+        return null;
+      }
+      return {
+        startKey: toKey(values[0], values[1]),
+        endKey: toKey(values[values.length - 2], values[values.length - 1])
+      };
+    };
+
+    const allPaths = isTaxonomyPage ? Array.from(svgDoc.querySelectorAll('path')) : [];
+    const nodeMeta = new Map();
+    const parentByNodeKey = new Map();
+
+    if (isTaxonomyPage) {
+      nodes.forEach((node) => {
+        const key = parseTranslate(node.getAttribute('transform') || '');
+        const textEl = node.querySelector('text');
+        const circleEl = node.querySelector('circle');
+        if (!key || !textEl || !circleEl) {
+          return;
+        }
+        nodeMeta.set(key, { node, textEl, circleEl });
+      });
+
+      allPaths.forEach((path) => {
+        const endpoints = parsePathEndpoints(path.getAttribute('d'));
+        if (!endpoints || !nodeMeta.has(endpoints.startKey) || !nodeMeta.has(endpoints.endKey)) {
+          return;
+        }
+        // In this SVG, each path starts at the child node and ends at its parent node.
+        parentByNodeKey.set(endpoints.startKey, { parentKey: endpoints.endKey, path });
+      });
+    }
+
+    const applyTaxonomyLinkedDefaults = () => {
+      if (!shouldHighlightLinkedNodes) {
+        return;
+      }
+
+      nodeMeta.forEach(({ textEl, circleEl }) => {
+        textEl.style.opacity = '';
+        textEl.style.fill = '';
+        textEl.style.fontWeight = '';
+        circleEl.style.opacity = '';
+        circleEl.style.fillOpacity = '';
+        circleEl.style.stroke = '';
+        circleEl.style.strokeWidth = '';
+        circleEl.style.filter = '';
+      });
+
+      allPaths.forEach((path) => {
+        path.style.opacity = '';
+        path.style.stroke = '';
+        path.style.strokeWidth = '';
+        path.style.filter = '';
+      });
+
+      Array.from(svgDoc.querySelectorAll('g.node[data-clade-linked="true"]')).forEach((node) => {
+        const textEl = node.querySelector('text');
+        const circleEl = node.querySelector('circle');
+        if (textEl) {
+          textEl.style.fill = '#0f6b8c';
+          textEl.style.fontWeight = '800';
+          textEl.style.opacity = '1';
+        }
+        if (circleEl) {
+          circleEl.style.stroke = '#0f6b8c';
+          circleEl.style.strokeWidth = '4px';
+          circleEl.style.opacity = '1';
+          circleEl.style.fillOpacity = '1';
+          circleEl.style.filter = 'drop-shadow(0 0 5px rgba(15, 107, 140, 0.35))';
+        }
+      });
+    };
+
+    const highlightAncestorsForNode = (node) => {
+      if (!isTaxonomyPage) {
+        return;
+      }
+
+      applyTaxonomyLinkedDefaults();
+
+      const focusKey = parseTranslate(node.getAttribute('transform') || '');
+      if (!focusKey || !nodeMeta.has(focusKey)) {
+        return;
+      }
+
+      const highlightedNodeKeys = new Set();
+      const highlightedPaths = new Set();
+      let currentKey = focusKey;
+      while (currentKey) {
+        highlightedNodeKeys.add(currentKey);
+        const relation = parentByNodeKey.get(currentKey);
+        if (!relation) {
+          break;
+        }
+        highlightedPaths.add(relation.path);
+        currentKey = relation.parentKey;
+      }
+
+      nodeMeta.forEach((entry, key) => {
+        const isHighlighted = highlightedNodeKeys.has(key);
+        if (isHighlighted) {
+          entry.textEl.style.opacity = '1';
+          entry.textEl.style.fill = '#1a2c3e';
+          entry.textEl.style.fontWeight = '800';
+          entry.circleEl.style.opacity = '1';
+          entry.circleEl.style.fillOpacity = '1';
+          entry.circleEl.style.stroke = '#d7263d';
+          entry.circleEl.style.strokeWidth = '6px';
+          entry.circleEl.style.filter = 'drop-shadow(0 0 6px rgba(215, 38, 61, 0.45))';
+        } else {
+          entry.textEl.style.opacity = '0.48';
+          entry.textEl.style.fill = '#8aa0ad';
+          entry.textEl.style.fontWeight = '700';
+          entry.circleEl.style.opacity = '0.3';
+          entry.circleEl.style.fillOpacity = '0.55';
+          entry.circleEl.style.stroke = '#d6dde3';
+          entry.circleEl.style.strokeWidth = '2px';
+          entry.circleEl.style.filter = 'none';
+        }
+      });
+
+      allPaths.forEach((path) => {
+        const isHighlighted = highlightedPaths.has(path);
+        if (isHighlighted) {
+          path.style.opacity = '1';
+          path.style.stroke = '#d7263d';
+          path.style.strokeWidth = '6px';
+          path.style.filter = 'drop-shadow(0 0 6px rgba(215, 38, 61, 0.25))';
+        } else {
+          path.style.opacity = '0.2';
+          path.style.stroke = '#d5d5d5';
+          path.style.strokeWidth = '3px';
+          path.style.filter = 'none';
+        }
+      });
+    };
+
     nodes.forEach((node) => {
       const textEl = node.querySelector('text');
       const circleEl = node.querySelector('circle');
@@ -1534,6 +1835,18 @@ function initCladeNavigationLinks() {
         textEl.style.textUnderlineOffset = '3px';
       }
 
+      node.dataset.cladeLinked = 'true';
+
+      if (isTaxonomyPage) {
+        if (!node.dataset.cladeHoverBound) {
+          node.dataset.cladeHoverBound = 'true';
+          node.addEventListener('mouseenter', () => highlightAncestorsForNode(node));
+          node.addEventListener('focus', () => highlightAncestorsForNode(node));
+          node.addEventListener('mouseleave', () => applyTaxonomyLinkedDefaults());
+          node.addEventListener('blur', () => applyTaxonomyLinkedDefaults());
+        }
+      }
+
       node.setAttribute('tabindex', '0');
       node.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -1541,6 +1854,8 @@ function initCladeNavigationLinks() {
         }
       });
     });
+
+    applyTaxonomyLinkedDefaults();
   };
 
   cladeObjects.forEach((cladeObject) => {
@@ -1597,6 +1912,29 @@ function initTaxonomyCladeHoverHighlight() {
     };
   };
 
+  const applyLinkedNodeHighlight = (svgDoc) => {
+    if (!svgDoc) {
+      return;
+    }
+
+    Array.from(svgDoc.querySelectorAll('g.node[data-clade-linked="true"]')).forEach((node) => {
+      const textEl = node.querySelector('text');
+      const circleEl = node.querySelector('circle');
+      if (textEl) {
+        textEl.style.fill = '#0f6b8c';
+        textEl.style.fontWeight = '800';
+        textEl.style.opacity = '1';
+      }
+      if (circleEl) {
+        circleEl.style.stroke = '#0f6b8c';
+        circleEl.style.strokeWidth = '4px';
+        circleEl.style.opacity = '1';
+        circleEl.style.fillOpacity = '1';
+        circleEl.style.filter = 'drop-shadow(0 0 5px rgba(15, 107, 140, 0.35))';
+      }
+    });
+  };
+
   const clearHighlight = (svgDoc) => {
     if (!svgDoc) {
       return;
@@ -1625,6 +1963,8 @@ function initTaxonomyCladeHoverHighlight() {
       path.style.strokeWidth = '';
       path.style.filter = '';
     });
+
+    applyLinkedNodeHighlight(svgDoc);
   };
 
   const applyHighlightForPage = (pageKey) => {
@@ -1754,6 +2094,7 @@ function initTaxonomyCladeHoverHighlight() {
   cladeObject.addEventListener('load', () => {
     const hoveredCard = document.querySelector('.subpage-grid .subpage-card[href]:hover');
     if (!hoveredCard) {
+      clearHighlight(cladeObject.contentDocument);
       return;
     }
 
@@ -1762,6 +2103,8 @@ function initTaxonomyCladeHoverHighlight() {
       applyHighlightForPage(pageKey);
     }
   });
+
+  clearHighlight(cladeObject.contentDocument);
 }
 
 function initPageWidgets() {
@@ -1819,7 +2162,7 @@ function initVariantCladeFigureHighlight(pageKey) {
   const controlsId = 'clade-controls-row';
   const originalCladeSrc = cladeObject.getAttribute('data') || '';
   let activeMode = 'ancestors';
-  let hasInteracted = true;
+  let hasInteracted = false;
 
   const toKey = (x, y) => `${Number(x).toString()},${Number(y).toString()}`;
 
@@ -1865,9 +2208,9 @@ function initVariantCladeFigureHighlight(pageKey) {
 
   const resetCladeView = () => {
     activeMode = 'ancestors';
-    hasInteracted = true;
-    setActiveButton('ancestors');
-    setNote(`Tracing ancestors. ${covariantsCitationHtml}`);
+    hasInteracted = false;
+    setActiveButton(null);
+    setNote(covariantsCitationHtml);
     if (originalCladeSrc) {
       cladeObject.setAttribute('data', `${originalCladeSrc}${originalCladeSrc.includes('?') ? '&' : '?'}reset=${Date.now()}`);
     }
@@ -2018,7 +2361,7 @@ function initVariantCladeFigureHighlight(pageKey) {
     controls.id = controlsId;
     controls.className = 'button-row clade-controls';
     controls.innerHTML = `
-      <button type="button" data-clade-mode="ancestors" class="is-active">Trace ancestors</button>
+      <button type="button" data-clade-mode="ancestors">Trace ancestors</button>
       <button type="button" data-clade-mode="descendants">Trace descendants</button>
       <button type="button" data-clade-action="reset">Reset</button>
     `;
@@ -2046,14 +2389,14 @@ function initVariantCladeFigureHighlight(pageKey) {
 
   if (cladeObject.contentDocument) {
     ensureControls();
-    setActiveButton('ancestors');
-    setNote(`Tracing ancestors. ${covariantsCitationHtml}`);
+    setActiveButton(null);
+    setNote(covariantsCitationHtml);
     applyHighlight();
   } else {
     cladeObject.addEventListener('load', () => {
       ensureControls();
-      setActiveButton('ancestors');
-      setNote(`Tracing ancestors. ${covariantsCitationHtml}`);
+      setActiveButton(null);
+      setNote(covariantsCitationHtml);
       applyHighlight();
     }, { once: true });
   }
