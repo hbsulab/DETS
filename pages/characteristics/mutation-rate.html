@@ -15,29 +15,34 @@
   <div class="container">
     <div class="page-header">
       <h1>Mutation Rate</h1>
-      <p>Figure-led view of the temporal mutation-rate pattern summarized in Fig2_MutRate.pdf.</p>
+      <p>Mutations are the primary drivers of viral evolution. To understand how novel SARS-CoV-2 variants persistently emerge, it is necessary to decipher the underlying rate at which new mutations appear on its spike glycoprotein <a href="#ref-1">[1]</a>.</p>
     </div>
 
     <div class="text-block">
       <h2>Interpretation</h2>
-      <p>This page is reserved for the mutation-rate figure and a short explanation of how substitutions accumulate over time in the corrected dataset.</p>
-      <p>Use it to describe which months show acceleration, where the signal stabilizes, and how the observed rate differs across lineages or genomic regions.</p>
+      <p>We observed an increase in the sequence-level mutation rate <em>&xi;</em> of the spike glycoprotein over the course of the pandemic (<a href="#fig-2">Fig. 2</a>). Early pre-Omicron variants demonstrated relatively low and stable mutation rates, with mean values for D614G (1.18 &plusmn; 0.05 aa seq<sup>-1</sup> mo<sup>-1</sup>) and Alpha (1.18 &plusmn; 0.09 aa seq<sup>-1</sup> mo<sup>-1</sup>) highlighting the limited sequence divergence at the onset of viral transmission <a href="#ref-2">[2]</a>. Subsequent variants of the Omicron family exhibited elevated <em>&xi;</em> values, with mean rates ranging from 1.41 &plusmn; 0.26 aa seq<sup>-1</sup> mo<sup>-1</sup> for BA.4&amp;5 to 1.55 &plusmn; 0.47 aa seq<sup>-1</sup> mo<sup>-1</sup> for BA.1, indicative of accelerated evolutionary dynamics and increased mutational variance.</p>
+      <p>Furthermore, we observed a robust positive correlation between the site-specific mutation rates and the genetic diversity of major SARS-CoV-2 variants. These include B.1.1.7 (Alpha, alpha), B.1.351 (Beta, beta), P.1 (Gamma, gamma), B.1.617.2 (Delta, delta), and Omicron (o) (<a href="#fig-2">Fig. 2 Inset</a>).</p>
+      <p>Notably, highly transmissible variants like Delta and Omicron exhibited higher site mutation rates of 0.29 aa site<sup>-1</sup> mo<sup>-1</sup> and 0.47 aa site<sup>-1</sup> mo<sup>-1</sup> respectively, as well as greater within-variant genetic diversity <a href="#ref-3">[3]</a><a href="#ref-4">[4]</a>.</p>
     </div>
 
-    <div class="visualization-block">
-      <h3>Fig2_MutRate.pdf</h3>
+    <div class="visualization-block" id="fig-2">
+      <h3>Temporal Mutation Rate Overview (PDF)</h3>
       <div class="viz-placeholder">
-        <object data="../../assets/data/Fig2_MutRate.pdf" type="application/pdf" width="100%" height="760">
-          <p>Your browser cannot preview the PDF. <a href="../../assets/data/Fig2_MutRate.pdf" target="_blank" rel="noopener noreferrer">Open Fig2_MutRate.pdf</a>.</p>
+        <object data="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig2_MutRate.pdf" type="application/pdf" width="100%" height="760">
+          <p>Your browser cannot preview the PDF. <a href="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig2_MutRate.pdf" target="_blank" rel="noopener noreferrer">Open Temporal Mutation Rate Overview (PDF)</a>.</p>
         </object>
       </div>
+      <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 2.</strong> Mutation rates <em>&xi;</em> of SARS-CoV-2 spike glycoproteins across major variants, expressed in units of aa seq<sup>-1</sup> mo<sup>-1</sup>. Variants are ordered top to bottom according to their designation date by the World Health Organization <a href="#ref-5">[5]</a>. <strong>Inset.</strong> Correlation between site mutation rates and effective population size for variants of concern (<em>R</em><sup>2</sup> = 0.853, <em>n</em> = 6, 95% CI [0.287, 0.999]), expressed in aa site<sup>-1</sup> mo<sup>-1</sup>. Other abbreviations: alpha -- B.1.1.7 (Alpha), beta -- B.1.351 (Beta), gamma -- P.1 (Gamma), delta -- B.1.617.2 (Delta), o -- Omicron.</p>
     </div>
 
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>References</h4>
       <ul>
-        <li>Describe whether the rate is measured per sequence, per site, or per month.</li>
-        <li>Connect the figure back to the monthly lineage panels in Evolution.</li>
+        <li id="ref-1">[1] Carabelli, A. M. et al. SARS-CoV-2 variant biology: immune escape, transmission and fitness. <em>Nat. Rev. Microbiol.</em> (2023). <a href="https://doi.org/10.1038/s41579-023-00878-2" target="_blank" rel="noopener noreferrer">https://doi.org/10.1038/s41579-023-00878-2</a></li>
+        <li id="ref-2">[2] Duchene, Sebastian et al. Temporal signal and the phylodynamic threshold of SARS-CoV-2. <em>Virus Evol.</em> (2020). <a href="https://doi.org/10.1093/ve/veaa061" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/ve/veaa061</a></li>
+        <li id="ref-3">[3] Mlcochova, Petra et al. SARS-CoV-2 B.1.617.2 Delta variant replication and immune evasion. <em>Nature</em> (2021).</li>
+        <li id="ref-4">[4] Fan, Yao et al. SARS-CoV-2 Omicron variant: recent progress and future perspectives. <em>Signal Transduct. Target. Ther.</em> (2022).</li>
+        <li id="ref-5">[5] WHO. <a href="https://data.who.int/dashboards/covid19/variants" target="_blank" rel="noopener noreferrer">WHO COVID-19 Dashboard</a> (2024).</li>
       </ul>
     </div>
   </div>

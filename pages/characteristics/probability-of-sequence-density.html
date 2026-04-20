@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>DETS | Probability of Sequence Density</title>
+  <title>DETS | PSD</title>
   <link rel="stylesheet" href="../../css/styles.css">
 </head>
 <body>
@@ -14,30 +14,34 @@
 <div id="main_container">
   <div class="container">
     <div class="page-header">
-      <h1>Probability of Sequence Density</h1>
-      <p>Figure-led view of the sequence-density probability result summarized in Fig3_PSD.pdf.</p>
+      <h1>PSD</h1>
+      <p>Complementing the temporal aspect of viral evolution in terms of rate heterogeneity is the spatial information embedded in its sequence space. To uncover the patterns hidden within such a vast ensemble of sequences, we focused on the scaling behaviors of spike mutations.</p>
     </div>
 
     <div class="text-block">
       <h2>Interpretation</h2>
-      <p>This page is reserved for the probability-of-sequence-density figure and a short explanation of how sequence density varies across the corrected dataset.</p>
-      <p>Use it to discuss overrepresented months, clustered mutation regimes, or how the distribution differs between major lineages.</p>
+      <p>In this study, we defined the term probability sequence density (PSD) <em>P(d)</em>, which denotes a probability distribution over the integral displacement <em>d</em> of a given sequence from its nearest ancestor in the sequence space.</p>
+      <p>From the PSDs of the monthly non-degenerate sequence sets, we observed a linear scaling relationship between the quantities <em>P(d)</em> and <em>d</em>, which manifested itself across different time frames of the SARS-CoV-2 pandemic (<a href="#fig-3">Fig. 3a</a>). This scaling was highly robust, and was confirmed by the systematic examination of the log <em>P(d)</em>-log <em>d</em> plots for every month from January 2020 to December 2023.</p>
+      <p>We further examined the dynamics of the scaling relationships between <em>P(d)</em> and <em>d</em>, from which we discovered an intriguing link between the time gradient of the log <em>P(d)</em>-log <em>d</em> slope, &Delta;(log <em>P(d)</em> / log <em>d</em>) / &Delta;<em>t</em>, and SARS-CoV-2 spike evolution.</p>
     </div>
 
-    <div class="visualization-block">
-      <h3>Fig3_PSD.pdf</h3>
+    <div class="visualization-block" id="fig-3">
+      <h3>PSD Distribution</h3>
       <div class="viz-placeholder">
-        <object data="../../assets/data/Fig3_PSD.pdf" type="application/pdf" width="100%" height="760">
-          <p>Your browser cannot preview the PDF. <a href="../../assets/data/Fig3_PSD.pdf" target="_blank" rel="noopener noreferrer">Open Fig3_PSD.pdf</a>.</p>
+        <object data="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig3_PSD.pdf" type="application/pdf" width="100%" height="760">
+          <p>Your browser cannot preview this figure. <a href="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig3_PSD.pdf" target="_blank" rel="noopener noreferrer">Open PSD Distribution</a>.</p>
         </object>
       </div>
+      <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 3.</strong> <strong>a.</strong> Scaling relationship between PSD <em>P(d)</em> and number of mutations <em>d</em> in selected months (<em>R</em><sup>2</sup><sub>Mar20</sub> = 0.903 with <em>n</em> = 10 and 95% CI [0.611, 0.982], <em>R</em><sup>2</sup><sub>Oct20</sub> = 0.899 with <em>n</em> = 9 and 95% CI [0.525, 0.992], <em>R</em><sup>2</sup><sub>May21</sub> = 0.992 with <em>n</em> = 11 and 95% CI [0.967, 0.998]). <strong>b.</strong> Evolution of the time gradient &Delta;(log <em>P(d)</em> / log <em>d</em>) / &Delta;<em>t</em>. Months wherein notable SARS-CoV-2 strains were designated by the World Health Organization as variants of concern, interest, or under monitoring are annotated with red, green, and orange arrows respectively <a href="#ref-1">[1]</a>. Other abbreviations: alpha -- B.1.1.7 (Alpha), beta -- B.1.351 (Beta), delta -- B.1.617.2 (Delta).</p>
     </div>
 
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>References</h4>
       <ul>
-        <li>Use this page to define what “sequence density” means in your analysis.</li>
-        <li>Reference the same filtered month and mutation choices used elsewhere on the site.</li>
+        <li id="ref-1">[1] WHO. <a href="https://data.who.int/dashboards/covid19/variants" target="_blank" rel="noopener noreferrer">WHO COVID-19 Dashboard</a> (2024).</li>
+        <li id="ref-2">[2] Sender, Ron et al. The total number and mass of SARS-CoV-2 virions. <em>Proc. Natl. Acad. Sci. U.S.A.</em> (2021).</li>
+        <li id="ref-3">[3] Viana, Raquel et al. Rapid epidemic expansion of the SARS-CoV-2 Omicron variant in southern Africa. <em>Nature</em> (2022).</li>
+        <li id="ref-4">[4] Planas, Delphine et al. Distinct evolution of SARS-CoV-2 Omicron XBB and BA.2.86/JN.1 lineages combining increased fitness and antibody evasion. <em>Nat. Commun.</em> (2024).</li>
       </ul>
     </div>
   </div>

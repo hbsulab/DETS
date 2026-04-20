@@ -14,31 +14,32 @@
 <div id="main_container">
   <div class="container">
     <div class="page-header">
-      <h1>Evolution</h1>
-      <p>Integrated view of Updates and Time Course from the deLemus reference pages.</p>
+      <h1>deLemus</h1>
+      <p>Leading-mutation surveillance and monthly time-course tracking for SARS-CoV-2 spike evolution.</p>
     </div>
 
     <div class="text-block">
       <h2>About deLemus</h2>
       <p>The dynamic epidemiology of COVID-19 has been driven by the continuous evolution of SARS-CoV-2. Variants and subvariants emerge with novel mutations that fine-tune viral fitness and sustain global circulation. deLemus focuses on monitoring these evolutionary trajectories and identifying leading spike mutations that can signal upcoming shifts in dominant lineages.</p>
       <p>By applying low-rank tensor decomposition and epistatic correlation analysis to reported sequence data, deLemus outlines leading mutations on a monthly basis and supports early warning for variant evolution.</p>
+      <p>Here, we introduce a bifurcated statistical pipeline for deciphering the temporal mutation pattern of the SARS-CoV-2 spike glycoprotein (<a href="#fig-1">Fig. 1</a>). On the LMCM side, our leading mutations by the composite metric method integrates sequence, site, and amino acid data from Tucker decomposition of a mutation tensor, and pair correlation information of mutations, to outline a set of evolutionarily important mutations, coined leading mutations, every month.</p>
     </div>
 
-    <div class="visualization-block">
+    <div class="visualization-block" id="fig-1">
       <h3>Mechanism and Landscape Overview</h3>
       <div class="feature-panel">
         <p>Multi-scale examination of viral evolution across structural, epidemiological, and temporal contexts.</p>
-        <iframe src="../../assets/data/Fig1_Overview+LMCM_new.pdf" title="Figure 1: Overview and Landscape Context" style="width:100%;height:600px;border:1px solid #ddd;"></iframe>
-        <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 1:</strong> Overview of mutation landscape and core mechanisms (LMCM) in SARS-CoV-2 evolution.</p>
+        <iframe src="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig1_Overview+LMCM_new.pdf" title="Figure 1: Overview and Landscape Context" style="width:100%;height:600px;border:1px solid #ddd;"></iframe>
+        <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 1.</strong> A statistical pipeline for deciphering the temporal mutation pattern of the SARS-CoV-2 spike glycoprotein. First, spike glycoprotein amino acid sequences downloaded from the Global Initiative on Sharing All Influenza Data (GISAID) hCoV-19 database are filtered and aligned to generate sets of non-degenerate sequences grouped by month. Then, these data sets are processed in two parallel steps. For the probability sequence density (PSD) <em>P(d)</em> analysis, the log <em>P(d)</em>-log <em>d</em> slope of each monthly data set is computed, and its time gradient can serve as an early warning signal for the emergence of new variants. On the other hand, our leading mutations by the composite metric (LMCM) method integrates sequence, site, and amino acid (AA) data from Tucker decomposition of a mutation tensor, and pair correlation information of mutations, to outline a set of evolutionarily important mutations every month. The diagram of selected leading mutations (LMs) displays a subset of top LMs outlined across four intervals, juxtaposed with the reported mutations carried by representative variants that emerged by the end of each period. Circles or wedges colored blue correspond to mutations that increase hydrophilicity, whereas those colored red indicate the opposite effect. The complete set of LMs outlined each month can be found in Fig. S1.</p>
       </div>
     </div>
 
-    <div class="visualization-block">
+    <div class="visualization-block" id="fig-4">
       <h3>Landscape and Mechanisms: Main Findings</h3>
       <div class="feature-panel">
         <p>Key evolutionary insights from lineage-level mutation composition and co-evolution patterns.</p>
-        <iframe src="../../assets/data/Fig4_LMCM_mains.pdf" title="Figure 4: Landscape and Mechanisms Main Insights" style="width:100%;height:600px;border:1px solid #ddd;"></iframe>
-        <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 4:</strong> Main findings from landscape and mechanistic context of LMCM analysis.</p>
+        <iframe src="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig4_LMCM_mains.pdf" title="Figure 4: Landscape and Mechanisms Main Insights" style="width:100%;height:600px;border:1px solid #ddd;"></iframe>
+        <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 4.</strong> Top-ranked LMCM-outlined leading mutations (LMs) in the receptor-binding domain (RBD) of the spike. Variants designated as variants of concern or interest in the same month by the World Health Organization are grouped together <a href="#ref-3">[3]</a>. Each pie chart represents the distribution of top-ranked LMs for a given month, where each colored sector corresponds to a specific mutation and its relative frequency within that month's top-ranked set. Vertical lines connect LMs with reported mutations if they coincide. The color scheme corresponds to the side-chain property of the residue being mutated to: Hydrophobic (orange; A, I, L, V, G, P, C, M), polar (magenta; H, N, Q, S, T), positive (red; K, R), negative (blue; D, E), aromatic (lime; F, W, Y), and deletion (gray; Delta). The complete set of RBD LMs can be found in Fig. S1 and S2.</p>
       </div>
     </div>
 
@@ -66,38 +67,12 @@
       </div>
     </div>
 
-    <div class="text-block">
-      <h2>Evolutionary Change Through Time</h2>
-      <p>This page emphasizes temporal dynamics, including acceleration periods where new adaptive constellations emerged.</p>
-      <p>A timeline-plus-tree approach can reveal when specific substitutions became fixed in expanding clades.</p>
-    </div>
-
-    <div class="visualization-block">
-      <h3>Temporal Lineage Dynamics</h3>
-      <div class="viz-placeholder">
-        <p>This section is prepared for an interactive panel (for example D3.js, Plotly, or ECharts) specific to this page topic.</p>
-      </div>
-    </div>
-
-    <div class="data-table-wrapper">
-      <h3>Evolution Analysis Metrics</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Primary axis</td><td>Collection date</td><td>Supports monthly or weekly bins</td></tr>
-          <tr><td>Modeling focus</td><td>Growth advantage</td><td>Relative lineage expansion rates</td></tr>
-          <tr><td>Outputs</td><td>Trend plots, trees</td><td>Intended for exploratory analysis</td></tr>
-        </tbody>
-      </table>
-    </div>
-
     <div class="footnote-block">
-      <h4>Notes</h4>
+      <h4>References</h4>
       <ul>
-        <li>Use these values as editable starter content for your project.</li>
-        <li>Replace with live data streams or curated datasets when ready.</li>
+        <li id="ref-1">[1] Shu, Yuelong and McCauley, John. GISAID: Global initiative on sharing all influenza data - from vision to reality. Eurosurveillance (2017).</li>
+        <li id="ref-2">[2] Hadfield, James et al. NextStrain: Real-time tracking of pathogen evolution. Bioinformatics (2018).</li>
+        <li id="ref-3">[3] WHO. <a href="https://data.who.int/dashboards/covid19/variants" target="_blank" rel="noopener noreferrer">WHO COVID-19 Dashboard</a> (2024).</li>
       </ul>
     </div>
 
