@@ -685,6 +685,172 @@ function renderStructureViewer(targetId, source, sourceType, style = {}) {
   });
 }
 
+function normalizeSectionHeading(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function getSectionHeading(section) {
+  if (!section) return '';
+  const heading = section.querySelector('h2, h3, h4');
+  return normalizeSectionHeading(heading ? heading.textContent : '');
+}
+
+function findSectionByHeading(container, matchers) {
+  const tests = Array.isArray(matchers) ? matchers : [matchers];
+  const contentBlocks = Array.from(container.children).filter((node) =>
+    node && node.nodeType === Node.ELEMENT_NODE && (
+      node.classList.contains('text-block') ||
+      node.classList.contains('visualization-block') ||
+      node.classList.contains('data-table-wrapper') ||
+      node.classList.contains('footnote-block') ||
+      node.classList.contains('feature-panel')
+    )
+  );
+
+  return contentBlocks.find((block) => {
+    const heading = getSectionHeading(block);
+    return tests.some((test) => {
+      if (typeof test === 'string') {
+        return heading === normalizeSectionHeading(test);
+      }
+      return typeof test === 'function' ? test(heading) : false;
+    });
+  }) || null;
+}
+
+function appendProfileSupplement(profileSection, title, sourceSection) {
+  if (!profileSection || !sourceSection) return;
+
+  const segments = [];
+  sourceSection.querySelectorAll('p, li').forEach((node) => {
+    const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+    if (text) {
+      segments.push(text);
+    }
+  });
+
+  if (!segments.length) {
+    const fallback = (sourceSection.textContent || '').replace(/\s+/g, ' ').trim();
+    if (fallback) {
+      segments.push(fallback);
+    }
+  }
+
+  if (!segments.length) return;
+
+  const supplement = document.createElement('p');
+  supplement.innerHTML = `<strong>${escapeHtml(title)}:</strong> ${escapeHtml(segments.join(' '))}`;
+  profileSection.appendChild(supplement);
+}
+
+function applyVariantPageLayout(container) {
+  if (!container) return;
+
+  const referenceSection = findSectionByHeading(container, 'Reference sequence, defining RNA, and spike mutations');
+  const cladeSection = findSectionByHeading(container, 'Clade Relationship Overview');
+  const interactiveSection = findSectionByHeading(container, 'Interactive spike structure and sequence by PDB ID');
+  const profileSection = findSectionByHeading(container, ['Variant Introduction', 'Variant Profile']);
+  const definingSection = findSectionByHeading(container, 'Defining Mutations');
+  const sequenceSection = findSectionByHeading(container, [(heading) => heading.startsWith('sequence examples')]);
+  const spikeSection = findSectionByHeading(container, 'Spike Structure');
+  const phenotypicSection = findSectionByHeading(container, [
+    'Phenotypic and Epidemiological Profile',
+    'JN.1 Scientific Summary',
+    'KP.2 Scientific Profile'
+  ]);
+  const referencesSection = findSectionByHeading(container, 'References');
+
+  const variantIdentitySection = findSectionByHeading(container, 'Variant Identity and Lineage Context');
+  const comparativeSummarySection = findSectionByHeading(container, 'Comparative Summary');
+
+  if (profileSection) {
+    const profileHeading = profileSection.querySelector('h2');
+    if (profileHeading) {
+      profileHeading.textContent = 'Variant Profile';
+    }
+    appendProfileSupplement(profileSection, 'Variant identity and lineage context', variantIdentitySection);
+    appendProfileSupplement(profileSection, 'Comparative summary', comparativeSummarySection);
+  }
+
+  if (phenotypicSection) {
+    const phenotypicHeading = phenotypicSection.querySelector('h2, h3, h4');
+    if (phenotypicHeading) {
+      phenotypicHeading.textContent = 'Phenotypic and Epidemiological Profile';
+    }
+  }
+
+  const removeHeadings = new Set([
+    'phylogenetic subtree from wuhan',
+    'growth and spread timeline',
+    'interactive wuhan vs variant sequence compare',
+    'variant identity and lineage context',
+    'comparative summary',
+    'signature mutation set',
+    'background',
+    'jn.1 mutations',
+    'kp.2 mutations',
+    'featured mutation: l455s',
+    'featured mutations: l455s, f456l',
+    'main mutations',
+    'l445',
+    'l445s',
+    'ba.2.86',
+    'kp.2 rbd',
+    'kp.2 ctd&s2',
+    'evolution of omicron subvariants',
+    'phylogenetic tree overview'
+  ]);
+
+  Array.from(container.children).forEach((child) => {
+    if (!child || child.nodeType !== Node.ELEMENT_NODE) return;
+    const heading = getSectionHeading(child);
+    if (removeHeadings.has(heading)) {
+      child.remove();
+    }
+  });
+
+  let tripleRow = container.querySelector('.variant-triple-row');
+  if (!tripleRow && definingSection && sequenceSection && spikeSection) {
+    tripleRow = document.createElement('div');
+    tripleRow.className = 'variant-triple-row';
+    tripleRow.appendChild(definingSection);
+    tripleRow.appendChild(sequenceSection);
+    tripleRow.appendChild(spikeSection);
+  }
+
+  const pageHeader = container.querySelector('.page-header');
+  const orderedSections = [
+    referenceSection,
+    cladeSection,
+    interactiveSection,
+    profileSection,
+    tripleRow,
+    phenotypicSection
+  ].filter(Boolean);
+
+  if (referencesSection) {
+    orderedSections.forEach((section) => container.insertBefore(section, referencesSection));
+    container.appendChild(referencesSection);
+  } else {
+    orderedSections.forEach((section) => container.appendChild(section));
+  }
+
+  const keepNodes = new Set([pageHeader, referencesSection, ...orderedSections].filter(Boolean));
+  Array.from(container.children).forEach((child) => {
+    if (!child || child.nodeType !== Node.ELEMENT_NODE) return;
+    if (keepNodes.has(child)) return;
+    if (
+      child.classList.contains('text-block') ||
+      child.classList.contains('visualization-block') ||
+      child.classList.contains('data-table-wrapper') ||
+      child.classList.contains('footnote-block') ||
+      child.classList.contains('feature-panel')
+    ) {
+      child.remove();
+    }
+  });
+}
+
 function renderVariantWidget(pageKey) {
   const configNode = document.getElementById('variant-widget-data');
   if (!configNode) return;
@@ -1024,6 +1190,8 @@ function renderVariantWidget(pageKey) {
         downloadText(`${pageKey}-${month}-spike.fasta`, `>${data.title} | ${month}\n${variantProteinSequence}\n`);
       });
     });
+
+    applyVariantPageLayout(container);
   });
 }
 

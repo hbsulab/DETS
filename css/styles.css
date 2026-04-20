@@ -583,6 +583,19 @@
       margin-top: 16px;
     }
 
+    .variant-triple-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 10px;
+      align-items: stretch;
+    }
+
+    .variant-triple-row > .text-block {
+      margin: 0;
+      height: 100%;
+    }
+
     .comparison-card {
       border: 1px solid #d7e5ee;
       border-radius: 18px;
@@ -624,6 +637,12 @@
       min-height: 620px;
     }
 
+    @media (max-width: 1100px) {
+      .variant-triple-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 900px) {
       .structure-frame-fullscreen-default {
         height: 78vh;
@@ -633,6 +652,10 @@
       .structure-frame-spike-compare {
         height: 60vh;
         min-height: 520px;
+      }
+
+      .variant-triple-row {
+        grid-template-columns: 1fr;
       }
     }
 
