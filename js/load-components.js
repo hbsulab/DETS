@@ -1,4 +1,5 @@
 const DETS_TEXT_CACHE = new Map();
+let DETS_PDFJS_PROMISE = null;
 
 async function loadComponent(selector, filePath) {
   try {
@@ -14,6 +15,7 @@ async function loadComponent(selector, filePath) {
 
 document.addEventListener('DOMContentLoaded', () => {
   injectFavicon();
+  initBackToTopButton();
   const resourcePrefix = getResourcePrefix();
   Promise.all([
     loadComponent('#header-placeholder', `${resourcePrefix}components/header.html`),
@@ -22,8 +24,83 @@ document.addEventListener('DOMContentLoaded', () => {
   ]).then(() => {
     initDropdowns();
     initPageWidgets();
+    initPdfCanvasRenders();
   });
 });
+
+function loadPdfJsLibrary() {
+  if (window.pdfjsLib) {
+    return Promise.resolve(window.pdfjsLib);
+  }
+  if (DETS_PDFJS_PROMISE) {
+    return DETS_PDFJS_PROMISE;
+  }
+
+  DETS_PDFJS_PROMISE = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = () => {
+      if (!window.pdfjsLib) {
+        reject(new Error('pdfjsLib failed to initialize'));
+        return;
+      }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    script.onerror = () => reject(new Error('Failed to load pdf.js script'));
+    document.head.appendChild(script);
+  });
+
+  return DETS_PDFJS_PROMISE;
+}
+
+async function renderPdfIntoHost(pdfjsLib, host) {
+  const src = host.getAttribute('data-pdf-src');
+  if (!src) return;
+
+  try {
+    host.classList.add('pdf-render-loading');
+    const loadingTask = pdfjsLib.getDocument({ url: src });
+    const pdf = await loadingTask.promise;
+    host.innerHTML = '';
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
+      const page = await pdf.getPage(pageNum);
+      const viewportAtOne = page.getViewport({ scale: 1 });
+      const targetWidth = Math.max(320, host.clientWidth || viewportAtOne.width);
+      const scale = targetWidth / viewportAtOne.width;
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement('canvas');
+      canvas.className = 'pdf-page-canvas';
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      canvas.style.width = '100%';
+      canvas.style.height = 'auto';
+
+      const context = canvas.getContext('2d', { alpha: false });
+      host.appendChild(canvas);
+
+      await page.render({ canvasContext: context, viewport }).promise;
+    }
+  } catch (error) {
+    console.error('PDF render failed:', error);
+  } finally {
+    host.classList.remove('pdf-render-loading');
+  }
+}
+
+async function initPdfCanvasRenders() {
+  const hosts = Array.from(document.querySelectorAll('[data-pdf-render][data-pdf-src]'));
+  if (!hosts.length) return;
+
+  try {
+    const pdfjsLib = await loadPdfJsLibrary();
+    await Promise.all(hosts.map((host) => renderPdfIntoHost(pdfjsLib, host)));
+  } catch (error) {
+    console.error('Unable to initialize PDF canvas rendering:', error);
+  }
+}
 
 function getResourcePrefix() {
   // Check if page is nested under pages/
@@ -679,8 +756,8 @@ function renderVariantWidget(pageKey) {
             </select>
           </div>
         </div>
-        <div class="structure-frame" style="height: 780px; min-height: 780px;">
-          <iframe id="variant-structure-iframe-${pageKey}" src="" title="RCSB 3D Protein Feature View for ${escapeHtml(data.title)}"></iframe>
+        <div class="structure-frame structure-frame-fullscreen-default">
+          <iframe id="variant-structure-iframe-${pageKey}" src="" title="RCSB 3D Protein Feature View for ${escapeHtml(data.title)}" allowfullscreen></iframe>
         </div>
         <p class="sequence-note">The embedded RCSB 3D Protein Feature View provides sequence, residue clicking, and linked 3D structure highlighting. Open the <a id="variant-structure-link-${pageKey}" href="#" target="_blank" rel="noopener noreferrer">full-page RCSB view</a> if you want more space.</p>
       </div>
@@ -790,10 +867,9 @@ function renderVariantWidget(pageKey) {
     const variantFrame = structureSection.querySelector(`#variant-structure-iframe-${pageKey}`);
     const variantLink = structureSection.querySelector(`#variant-structure-link-${pageKey}`);
     const loadVariantStructure = (pdbId) => {
-      const embedUrl = `https://www.rcsb.org/3d-sequence/${encodeURIComponent(pdbId)}?assemblyId=1&embedded=1`;
       const fullUrl = `https://www.rcsb.org/3d-sequence/${encodeURIComponent(pdbId)}?assemblyId=1`;
       if (variantFrame) {
-        variantFrame.src = embedUrl;
+        variantFrame.src = fullUrl;
       }
       if (variantLink) {
         variantLink.href = fullUrl;
@@ -955,6 +1031,10 @@ function renderComponentWidget(pageKey) {
   const container = document.querySelector('#main_container .container');
   if (!container) return;
 
+  if (pageKey === 'spike') {
+    return;
+  }
+
   fetchTextCached(getLocalResourcePath('assets/data/Wuhan.fasta')).then((fastaText) => {
     const genomeRecord = parseFasta(fastaText)[0];
     if (!genomeRecord) return;
@@ -1015,19 +1095,34 @@ function renderComponentWidget(pageKey) {
     if (pageKey === 'spike') {
       spikeSection.className = 'feature-panel';
       spikeSection.innerHTML = `
-        <h3>Wuhan spike sequence</h3>
-        <p>The page uses the Wuhan spike coding region and its translated protein so users can inspect the reference sequence before comparing variants.</p>
+        <h3>Reference spike sequence (EPI_ISL_402123)</h3>
+        <p>The page uses the Wuhan-Hu-1 spike coding region from EPI_ISL_402123 so users can inspect the reference sequence before comparing variants.</p>
         <div class="sequence-viewer">${escapeHtml(spikeProtein.match(/.{1,60}/g).join('\n'))}</div>
+        <p class="sequence-note">This sequence is the Wuhan reference used throughout the spike pages and variant comparisons.</p>
       `;
 
       structureSection.className = 'visualization-block';
       structureSection.innerHTML = `
-        <h3>Interactive Wuhan spike structure and sequence</h3>
+        <h3>Closed and open spike structures</h3>
         <div class="feature-panel">
-          <div class="structure-frame" style="height: 760px; min-height: 760px;">
-            <iframe src="https://www.rcsb.org/3d-sequence/6VSB?assemblyId=1&embedded=1" title="RCSB 3D Protein Feature View for spike"></iframe>
+          <p>Compare the closed prefusion trimer (6VXX) with the open prefusion trimer (6VYB). Both panels load the full RCSB Protein Feature View so the sequence and structure controls appear by default.</p>
+          <div class="comparison-grid spike-structure-grid">
+            <div class="comparison-card">
+              <h4>Closed state: 6VXX</h4>
+              <div class="structure-frame structure-frame-spike-compare">
+                <iframe src="https://www.rcsb.org/3d-sequence/6VXX?assemblyId=1" title="RCSB 3D Protein Feature View for closed spike 6VXX" allowfullscreen></iframe>
+              </div>
+              <p class="sequence-note"><a href="https://www.rcsb.org/3d-sequence/6VXX?assemblyId=1" target="_blank" rel="noopener noreferrer">Open 6VXX in a new tab</a>.</p>
+            </div>
+            <div class="comparison-card">
+              <h4>Open state: 6VYB</h4>
+              <div class="structure-frame structure-frame-spike-compare">
+                <iframe src="https://www.rcsb.org/3d-sequence/6VYB?assemblyId=1" title="RCSB 3D Protein Feature View for open spike 6VYB" allowfullscreen></iframe>
+              </div>
+              <p class="sequence-note"><a href="https://www.rcsb.org/3d-sequence/6VYB?assemblyId=1" target="_blank" rel="noopener noreferrer">Open 6VYB in a new tab</a>.</p>
+            </div>
           </div>
-          <p class="sequence-note">The embedded RCSB viewer provides the sequence panel, residue clicking, and linked structure highlighting. Use the <a href="https://www.rcsb.org/3d-sequence/6VSB?assemblyId=1" target="_blank" rel="noopener noreferrer">full RCSB 3D Protein Feature View</a> if the embed is constrained by your browser.</p>
+          <p class="sequence-note">The full RCSB view keeps the controls panel visible and lets you inspect sequence-linked annotations directly in each structural state.</p>
         </div>
       `;
     }
@@ -1211,15 +1306,611 @@ function renderEvolutionWidget(pageKey) {
   }
 }
 
+function initCladeNavigationLinks() {
+  const cladeObjects = Array.from(document.querySelectorAll('object[type="image/svg+xml"][data*="clades.svg"]'));
+  if (!cladeObjects.length) {
+    return;
+  }
+
+  const variantLinkMap = [
+    { tokens: ['20i (alpha, b.1.1.7)'], href: 'pages/variants/alpha.html' },
+    { tokens: ['20h (beta, b.1.351)'], href: 'pages/variants/beta.html' },
+    { tokens: ['21a (delta, b.1.617.2)', '21i (delta)', '21j (delta)'], href: 'pages/variants/delta.html' },
+    { tokens: ['21l (omicron, ba.2)'], href: 'pages/variants/omicron-ba2.html' },
+    { tokens: ['22a (ba.4)', '22b (ba.5)'], href: 'pages/variants/omicron-ba45.html' },
+    { tokens: ['24a (jn.1)'], href: 'pages/variants/jn1.html' },
+    { tokens: ['24b (jn.1.11.1)', '24g (kp.2.3)'], href: 'pages/variants/kp2.html' }
+  ];
+
+  const resolveVariantHref = (labelText) => {
+    const label = (labelText || '').toLowerCase();
+    const match = variantLinkMap.find((entry) => entry.tokens.some((token) => label.includes(token)));
+    if (!match) {
+      return null;
+    }
+    return `${getResourcePrefix()}${match.href}`;
+  };
+
+  const bindObjectLinks = (cladeObject) => {
+    const svgDoc = cladeObject.contentDocument;
+    if (!svgDoc) {
+      return;
+    }
+
+    const nodes = Array.from(svgDoc.querySelectorAll('g.node'));
+    nodes.forEach((node) => {
+      const textEl = node.querySelector('text');
+      const circleEl = node.querySelector('circle');
+      const href = resolveVariantHref(textEl ? textEl.textContent : '');
+      if (!href) {
+        return;
+      }
+
+      const navigate = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href = href;
+      };
+
+      [node, textEl, circleEl].forEach((element) => {
+        if (!element) {
+          return;
+        }
+        element.style.cursor = 'pointer';
+        element.addEventListener('click', navigate);
+      });
+
+      if (textEl) {
+        textEl.style.textDecoration = 'underline';
+        textEl.style.textDecorationThickness = '2px';
+        textEl.style.textUnderlineOffset = '3px';
+      }
+
+      node.setAttribute('tabindex', '0');
+      node.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          navigate(event);
+        }
+      });
+    });
+  };
+
+  cladeObjects.forEach((cladeObject) => {
+    bindObjectLinks(cladeObject);
+    cladeObject.addEventListener('load', () => bindObjectLinks(cladeObject));
+  });
+}
+
+function initTaxonomyCladeHoverHighlight() {
+  const cladeObject = document.querySelector('object[type="image/svg+xml"][data*="clades.svg"]');
+  const cards = Array.from(document.querySelectorAll('.subpage-grid .subpage-card[href]'));
+  if (!cladeObject || !cards.length) {
+    return;
+  }
+
+  const focusTokensByPage = {
+    alpha: ['20i (alpha, b.1.1.7)'],
+    beta: ['20h (beta, b.1.351)'],
+    delta: ['21a (delta, b.1.617.2)'],
+    'omicron-ba2': ['21l (omicron, ba.2)'],
+    'omicron-ba45': ['22a (ba.4)', '22b (ba.5)'],
+    jn1: ['24a (jn.1)'],
+    kp2: ['24b (jn.1.11.1)', '24g (kp.2.3)']
+  };
+
+  const pageKeyByHref = {
+    'alpha.html': 'alpha',
+    'beta.html': 'beta',
+    'delta.html': 'delta',
+    'omicron-ba2.html': 'omicron-ba2',
+    'omicron-ba45.html': 'omicron-ba45',
+    'jn1.html': 'jn1',
+    'kp2.html': 'kp2'
+  };
+
+  const toKey = (x, y) => `${Number(x).toString()},${Number(y).toString()}`;
+
+  const parseTranslate = (transform) => {
+    const match = /translate\(([^,]+),([^)]+)\)/.exec(transform || '');
+    if (!match) {
+      return null;
+    }
+    return toKey(match[1], match[2]);
+  };
+
+  const parsePathEndpoints = (d) => {
+    const values = (d || '').match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi);
+    if (!values || values.length < 4) {
+      return null;
+    }
+    return {
+      startKey: toKey(values[0], values[1]),
+      endKey: toKey(values[values.length - 2], values[values.length - 1])
+    };
+  };
+
+  const clearHighlight = (svgDoc) => {
+    if (!svgDoc) {
+      return;
+    }
+
+    Array.from(svgDoc.querySelectorAll('g.node')).forEach((node) => {
+      const textEl = node.querySelector('text');
+      const circleEl = node.querySelector('circle');
+      if (textEl) {
+        textEl.style.opacity = '';
+        textEl.style.fill = '';
+        textEl.style.fontWeight = '';
+      }
+      if (circleEl) {
+        circleEl.style.opacity = '';
+        circleEl.style.fillOpacity = '';
+        circleEl.style.stroke = '';
+        circleEl.style.strokeWidth = '';
+        circleEl.style.filter = '';
+      }
+    });
+
+    Array.from(svgDoc.querySelectorAll('path')).forEach((path) => {
+      path.style.opacity = '';
+      path.style.stroke = '';
+      path.style.strokeWidth = '';
+      path.style.filter = '';
+    });
+  };
+
+  const applyHighlightForPage = (pageKey) => {
+    const svgDoc = cladeObject.contentDocument;
+    if (!svgDoc) {
+      return;
+    }
+
+    const focusTokens = (focusTokensByPage[pageKey] || []).map((token) => token.toLowerCase());
+    if (!focusTokens.length) {
+      clearHighlight(svgDoc);
+      return;
+    }
+
+    const nodes = Array.from(svgDoc.querySelectorAll('g.node'));
+    const paths = Array.from(svgDoc.querySelectorAll('path'));
+    const nodeMeta = new Map();
+    const parentByNodeKey = new Map();
+    const highlightedNodeKeys = new Set();
+    const highlightedPaths = new Set();
+
+    nodes.forEach((node) => {
+      const key = parseTranslate(node.getAttribute('transform') || '');
+      const textEl = node.querySelector('text');
+      const circleEl = node.querySelector('circle');
+      if (!key || !textEl || !circleEl) {
+        return;
+      }
+
+      nodeMeta.set(key, {
+        node,
+        textEl,
+        circleEl,
+        label: (textEl.textContent || '').toLowerCase()
+      });
+    });
+
+    paths.forEach((path) => {
+      const endpoints = parsePathEndpoints(path.getAttribute('d'));
+      if (!endpoints || !nodeMeta.has(endpoints.startKey) || !nodeMeta.has(endpoints.endKey)) {
+        return;
+      }
+
+      // In this SVG, each path starts at the child node and ends at its parent node.
+      parentByNodeKey.set(endpoints.startKey, { parentKey: endpoints.endKey, path });
+    });
+
+    const focusKeys = Array.from(nodeMeta.entries())
+      .filter(([, entry]) => focusTokens.some((token) => entry.label.includes(token)))
+      .map(([key]) => key);
+
+    focusKeys.forEach((focusKey) => {
+      let currentKey = focusKey;
+      while (currentKey) {
+        highlightedNodeKeys.add(currentKey);
+        const relation = parentByNodeKey.get(currentKey);
+        if (!relation) {
+          break;
+        }
+        highlightedPaths.add(relation.path);
+        currentKey = relation.parentKey;
+      }
+    });
+
+    nodeMeta.forEach((entry, key) => {
+      const isHighlighted = highlightedNodeKeys.has(key);
+      if (isHighlighted) {
+        entry.textEl.style.opacity = '1';
+        entry.textEl.style.fill = '#1a2c3e';
+        entry.textEl.style.fontWeight = '800';
+        entry.circleEl.style.opacity = '1';
+        entry.circleEl.style.fillOpacity = '1';
+        entry.circleEl.style.stroke = '#d7263d';
+        entry.circleEl.style.strokeWidth = '6px';
+        entry.circleEl.style.filter = 'drop-shadow(0 0 6px rgba(215, 38, 61, 0.45))';
+      } else {
+        entry.textEl.style.opacity = '0.48';
+        entry.textEl.style.fill = '#8aa0ad';
+        entry.textEl.style.fontWeight = '700';
+        entry.circleEl.style.opacity = '0.3';
+        entry.circleEl.style.fillOpacity = '0.55';
+        entry.circleEl.style.stroke = '#d6dde3';
+        entry.circleEl.style.strokeWidth = '2px';
+        entry.circleEl.style.filter = 'none';
+      }
+    });
+
+    paths.forEach((path) => {
+      const isHighlighted = highlightedPaths.has(path);
+      if (isHighlighted) {
+        path.style.opacity = '1';
+        path.style.stroke = '#d7263d';
+        path.style.strokeWidth = '6px';
+        path.style.filter = 'drop-shadow(0 0 6px rgba(215, 38, 61, 0.25))';
+      } else {
+        path.style.opacity = '0.2';
+        path.style.stroke = '#d5d5d5';
+        path.style.strokeWidth = '3px';
+        path.style.filter = 'none';
+      }
+    });
+  };
+
+  const getPageKeyFromHref = (href) => {
+    const fileName = (href || '').split('/').pop();
+    return pageKeyByHref[fileName] || null;
+  };
+
+  cards.forEach((card) => {
+    const pageKey = getPageKeyFromHref(card.getAttribute('href'));
+    if (!pageKey) {
+      return;
+    }
+
+    const highlight = () => applyHighlightForPage(pageKey);
+    const clear = () => {
+      const svgDoc = cladeObject.contentDocument;
+      clearHighlight(svgDoc);
+    };
+
+    card.addEventListener('mouseenter', highlight);
+    card.addEventListener('focus', highlight);
+    card.addEventListener('mouseleave', clear);
+    card.addEventListener('blur', clear);
+  });
+
+  cladeObject.addEventListener('load', () => {
+    const hoveredCard = document.querySelector('.subpage-grid .subpage-card[href]:hover');
+    if (!hoveredCard) {
+      return;
+    }
+
+    const pageKey = getPageKeyFromHref(hoveredCard.getAttribute('href'));
+    if (pageKey) {
+      applyHighlightForPage(pageKey);
+    }
+  });
+}
+
 function initPageWidgets() {
+  initCladeNavigationLinks();
+  initTaxonomyCladeHoverHighlight();
+
   const pageKind = document.body.dataset.pageKind;
   const pageKey = document.body.dataset.pageKey;
 
   if (pageKind === 'variant') {
     renderVariantWidget(pageKey);
+    initVariantCladeFigureHighlight(pageKey);
   } else if (pageKind === 'component' && pageKey !== 'rna') {
     renderComponentWidget(pageKey);
   } else if (pageKind === 'evolution') {
     renderEvolutionWidget(pageKey);
   }
+}
+
+function initVariantCladeFigureHighlight(pageKey) {
+  const cladeObject = document.getElementById('clades-tree-object');
+  if (!cladeObject) {
+    return;
+  }
+
+  const cladePathConfigByPage = {
+    alpha: {
+      focusTokens: ['20i (alpha, b.1.1.7)']
+    },
+    beta: {
+      focusTokens: ['20h (beta, b.1.351)']
+    },
+    delta: {
+      focusTokens: ['21a (delta, b.1.617.2)']
+    },
+    'omicron-ba2': {
+      focusTokens: ['21l (omicron, ba.2)']
+    },
+    'omicron-ba45': {
+      focusTokens: ['22a (ba.4)', '22b (ba.5)']
+    },
+    jn1: {
+      focusTokens: ['24a (jn.1)']
+    },
+    kp2: {
+      focusTokens: ['24b (jn.1.11.1)', '24g (kp.2.3)']
+    }
+  };
+
+  const pageConfig = cladePathConfigByPage[pageKey];
+  if (!pageConfig) {
+    return;
+  }
+
+  const controlsId = 'clade-controls-row';
+  const originalCladeSrc = cladeObject.getAttribute('data') || '';
+  let activeMode = 'ancestors';
+  let hasInteracted = true;
+
+  const toKey = (x, y) => `${Number(x).toString()},${Number(y).toString()}`;
+
+  const parseTranslate = (transform) => {
+    const match = /translate\(([^,]+),([^)]+)\)/.exec(transform || '');
+    if (!match) {
+      return null;
+    }
+    return toKey(match[1], match[2]);
+  };
+
+  const parsePathEndpoints = (d) => {
+    const values = (d || '').match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi);
+    if (!values || values.length < 4) {
+      return;
+    }
+    return {
+      startKey: toKey(values[0], values[1]),
+      endKey: toKey(values[values.length - 2], values[values.length - 1])
+    };
+  };
+
+  const covariantsCitationHtml = 'Source: <a href="https://covariants.org/" target="_blank" rel="noopener noreferrer">CoVariants</a>';
+
+  const setNote = (text) => {
+    const noteHost = cladeObject.closest('.visualization-block');
+    const note = noteHost ? noteHost.querySelector('.clade-note') : document.querySelector('.clade-note');
+    if (note) {
+      note.innerHTML = text;
+    }
+  };
+
+  const setActiveButton = (mode) => {
+    const controls = document.getElementById(controlsId);
+    if (!controls) {
+      return;
+    }
+
+    controls.querySelectorAll('button[data-clade-mode]').forEach((item) => {
+      item.classList.toggle('is-active', item.dataset.cladeMode === mode);
+    });
+  };
+
+  const resetCladeView = () => {
+    activeMode = 'ancestors';
+    hasInteracted = true;
+    setActiveButton('ancestors');
+    setNote(`Tracing ancestors. ${covariantsCitationHtml}`);
+    if (originalCladeSrc) {
+      cladeObject.setAttribute('data', `${originalCladeSrc}${originalCladeSrc.includes('?') ? '&' : '?'}reset=${Date.now()}`);
+    }
+    applyHighlight();
+  };
+
+  const applyHighlight = () => {
+    if (!hasInteracted) {
+      return;
+    }
+
+    const svgDoc = cladeObject.contentDocument;
+    if (!svgDoc) {
+      return;
+    }
+
+    const nodes = Array.from(svgDoc.querySelectorAll('g.node'));
+    const paths = Array.from(svgDoc.querySelectorAll('path'));
+    const nodeMeta = new Map();
+    const parentByNodeKey = new Map();
+    const childrenByNodeKey = new Map();
+    const highlightedNodeKeys = new Set();
+    const highlightedPaths = new Set();
+
+    nodes.forEach((node) => {
+      const key = parseTranslate(node.getAttribute('transform') || '');
+      const textEl = node.querySelector('text');
+      const circleEl = node.querySelector('circle');
+      if (!key || !textEl || !circleEl) {
+        return;
+      }
+
+      nodeMeta.set(key, {
+        node,
+        textEl,
+        circleEl,
+        label: (textEl.textContent || '').toLowerCase()
+      });
+    });
+
+    paths.forEach((path) => {
+      const endpoints = parsePathEndpoints(path.getAttribute('d'));
+      if (!endpoints || !nodeMeta.has(endpoints.startKey) || !nodeMeta.has(endpoints.endKey)) {
+        return;
+      }
+
+      // In this SVG, each path starts at the child node and ends at its parent node.
+      parentByNodeKey.set(endpoints.startKey, { parentKey: endpoints.endKey, path });
+
+      if (!childrenByNodeKey.has(endpoints.endKey)) {
+        childrenByNodeKey.set(endpoints.endKey, []);
+      }
+      childrenByNodeKey.get(endpoints.endKey).push({ childKey: endpoints.startKey, path });
+    });
+
+    const focusTokens = (pageConfig.focusTokens || []).map((token) => token.toLowerCase());
+    const focusKeys = Array.from(nodeMeta.entries())
+      .filter(([, entry]) => focusTokens.some((token) => entry.label.includes(token)))
+      .map(([key]) => key);
+
+    if (focusKeys.length === 0) {
+      setNote('Unable to determine the clade path for this variant.');
+      return;
+    }
+
+    const addAncestors = (nodeKey) => {
+      let currentKey = nodeKey;
+      while (currentKey) {
+        highlightedNodeKeys.add(currentKey);
+        const relation = parentByNodeKey.get(currentKey);
+        if (!relation) {
+          break;
+        }
+        highlightedPaths.add(relation.path);
+        currentKey = relation.parentKey;
+      }
+    };
+
+    const addDescendants = (nodeKey) => {
+      const children = childrenByNodeKey.get(nodeKey) || [];
+      children.forEach(({ childKey, path }) => {
+        highlightedNodeKeys.add(childKey);
+        highlightedPaths.add(path);
+        addDescendants(childKey);
+      });
+    };
+
+    focusKeys.forEach((key) => {
+      highlightedNodeKeys.add(key);
+      if (activeMode === 'ancestors') {
+        addAncestors(key);
+      } else {
+        addDescendants(key);
+      }
+    });
+
+    nodeMeta.forEach((entry, key) => {
+      const isHighlighted = highlightedNodeKeys.has(key);
+      if (isHighlighted) {
+        entry.textEl.style.opacity = '1';
+        entry.textEl.style.fill = '#1a2c3e';
+        entry.textEl.style.fontWeight = '800';
+        entry.circleEl.style.opacity = '1';
+        entry.circleEl.style.fillOpacity = '1';
+        entry.circleEl.style.stroke = '#d7263d';
+        entry.circleEl.style.strokeWidth = '6px';
+        entry.circleEl.style.filter = 'drop-shadow(0 0 6px rgba(215, 38, 61, 0.45))';
+      } else {
+        entry.textEl.style.opacity = '0.48';
+        entry.textEl.style.fill = '#8aa0ad';
+        entry.textEl.style.fontWeight = '700';
+        entry.circleEl.style.opacity = '0.3';
+        entry.circleEl.style.fillOpacity = '0.55';
+        entry.circleEl.style.stroke = '#d6dde3';
+        entry.circleEl.style.strokeWidth = '2px';
+        entry.circleEl.style.filter = 'none';
+      }
+    });
+
+    paths.forEach((path) => {
+      const isHighlighted = highlightedPaths.has(path);
+      if (isHighlighted) {
+        path.style.opacity = '1';
+        path.style.stroke = '#d7263d';
+        path.style.strokeWidth = '6px';
+        path.style.filter = 'drop-shadow(0 0 6px rgba(215, 38, 61, 0.25))';
+      } else {
+        path.style.opacity = '0.2';
+        path.style.stroke = '#d5d5d5';
+        path.style.strokeWidth = '3px';
+        path.style.filter = 'none';
+      }
+    });
+
+    if (activeMode === 'ancestors') {
+      setNote(`Tracing ancestors. ${covariantsCitationHtml}`);
+    } else {
+      setNote(`Tracing descendants. ${covariantsCitationHtml}`);
+    }
+  };
+
+  const ensureControls = () => {
+    if (document.getElementById(controlsId)) {
+      return;
+    }
+
+    const controls = document.createElement('div');
+    controls.id = controlsId;
+    controls.className = 'button-row clade-controls';
+    controls.innerHTML = `
+      <button type="button" data-clade-mode="ancestors" class="is-active">Trace ancestors</button>
+      <button type="button" data-clade-mode="descendants">Trace descendants</button>
+      <button type="button" data-clade-action="reset">Reset</button>
+    `;
+
+    const figureWrap = cladeObject.closest('.clade-figure-wrap');
+    if (figureWrap && figureWrap.parentNode) {
+      figureWrap.parentNode.insertBefore(controls, figureWrap);
+    }
+
+    controls.addEventListener('click', (event) => {
+      const resetButton = event.target.closest('button[data-clade-action="reset"]');
+      if (resetButton) {
+        resetCladeView();
+        return;
+      }
+
+      const button = event.target.closest('button[data-clade-mode]');
+      if (!button) return;
+      activeMode = button.dataset.cladeMode || 'ancestors';
+      hasInteracted = true;
+      setActiveButton(activeMode);
+      applyHighlight();
+    });
+  };
+
+  if (cladeObject.contentDocument) {
+    ensureControls();
+    setActiveButton('ancestors');
+    setNote(`Tracing ancestors. ${covariantsCitationHtml}`);
+    applyHighlight();
+  } else {
+    cladeObject.addEventListener('load', () => {
+      ensureControls();
+      setActiveButton('ancestors');
+      setNote(`Tracing ancestors. ${covariantsCitationHtml}`);
+      applyHighlight();
+    }, { once: true });
+  }
+}
+
+// ========= Back to Top Button =========
+function initBackToTopButton() {
+  const backToTopButton = document.createElement('button');
+  backToTopButton.id = 'back-to-top';
+  backToTopButton.innerHTML = '↑';
+  backToTopButton.title = 'Back to top';
+  document.body.appendChild(backToTopButton);
+
+  window.addEventListener('scroll', () => {
+    if (window.pageYOffset > 300) {
+      backToTopButton.classList.add('show');
+    } else {
+      backToTopButton.classList.remove('show');
+    }
+  });
+
+  backToTopButton.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  });
 }

@@ -20,15 +20,8 @@
 
     <div class="text-block">
       <h2>RdRp in the Viral Cycle</h2>
-      <p>RdRp (nsp12) is the catalytic core of the replication-transcription complex and operates with cofactors such as nsp7 and nsp8. It drives genomic and subgenomic RNA synthesis and therefore directly shapes replication throughput.</p>
-      <p>Functional interpretation should include proofreading context (for example nsp14) and co-mutation patterns, since polymerase performance is system-level rather than single-site only.</p>
-    </div>
-
-    <div class="visualization-block">
-      <h3>RdRp Substitution Monitoring</h3>
-      <div class="viz-placeholder">
-        <p>Use this panel for RdRp mutation frequency trends, co-mutation networks, and replication-complex contextual overlays.</p>
-      </div>
+      <p>RdRp (nsp12) is the catalytic core of the replication-transcription complex and operates with cofactors such as nsp7 and nsp8 [1, 2]. It drives genomic and subgenomic RNA synthesis and therefore directly shapes replication throughput [1, 2].</p>
+      <p>Functional interpretation should include proofreading context (for example nsp14) and co-mutation patterns, since polymerase performance is system-level rather than single-site only [3].</p>
     </div>
 
     <div class="data-table-wrapper">
@@ -38,6 +31,7 @@
           <tr><th>Dimension</th><th>Observation Target</th><th>Interpretive Value</th></tr>
         </thead>
         <tbody>
+          <tr><td>Free energy analysis on cognate and non cognate base pairing</td><td>Relative free energy profiles for matched vs mismatched nucleotide incorporation states</td><td>Supports interpretation of polymerase fidelity, mismatch tolerance, and replication error propensity</td></tr>
           <tr><td>Catalytic context</td><td>nsp12-centered substitutions</td><td>Links sequence changes to replication hypotheses</td></tr>
           <tr><td>Complex interactions</td><td>nsp7/nsp8 and proofreading-associated co-patterns</td><td>Improves mechanistic plausibility of interpretations</td></tr>
           <tr><td>Epidemiological coupling</td><td>RdRp changes with lineage growth trajectories</td><td>Helps separate neutral drift from selected variants</td></tr>
@@ -47,10 +41,11 @@
     </div>
 
     <div class="footnote-block">
-      <h4>Interpretation Notes</h4>
+      <h4>References</h4>
       <ul>
-        <li>RdRp monitoring complements spike surveillance and improves whole-genome evolutionary understanding.</li>
-        <li>Prioritize repeated, cross-region signals over single-region transient spikes.</li>
+        <li>[1] Gao, Y. <em>et al.</em> Structure of the RNA-dependent RNA polymerase from COVID-19 virus. <em>Science</em> <strong>368</strong>, 779-782 (2020). <a href="https://www.science.org/doi/10.1126/science.abb7498" target="_blank" rel="noopener noreferrer">Link</a>.</li>
+        <li>[2] Hillen, H. S. <em>et al.</em> Structure of replicating SARS-CoV-2 polymerase. <em>Nature</em> <strong>584</strong>, 154-156 (2020). <a href="https://www.nature.com/articles/s41586-020-2368-8" target="_blank" rel="noopener noreferrer">Link</a>.</li>
+        <li>[3] Ferron, F. <em>et al.</em> Structural and molecular basis of mismatch correction and ribavirin excision from coronavirus RNA. <em>PNAS</em> <strong>115</strong>, E162-E171 (2018). <a href="https://doi.org/10.1073/pnas.1718806115" target="_blank" rel="noopener noreferrer">DOI</a>.</li>
       </ul>
     </div>
   </div>

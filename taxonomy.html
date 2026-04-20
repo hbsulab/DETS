@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>DETS | Taxonomy</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="header-placeholder"></div>
+<div id="navigator-placeholder"></div>
+
+<div id="main_container">
+  <div class="container">
+    <div class="page-header">
+      <h1>Taxonomy</h1>
+      <p>Browse major SARS-CoV-2 variants and sublineages with mutation-focused summaries, structure context, and comparative notes.</p>
+    </div>
+
+    <div class="visualization-block">
+      <h3>CoVariants Clade Tree</h3>
+      <div class="clade-figure-wrap">
+        <object type="image/svg+xml" data="assets/images/clades.svg" aria-label="SARS-CoV-2 clade relationship tree from CoVariants"></object>
+      </div>
+      <p class="clade-note">Source: <a href="https://covariants.org/" target="_blank" rel="noopener noreferrer">CoVariants</a>.</p>
+    </div>
+
+    <div class="subpage-grid">
+      <a class="subpage-card" href="pages/variants/alpha.html">
+        <h3>Alpha</h3>
+        <p>Early high-growth lineage with key spike substitutions and global replacement history.</p>
+      </a>
+      <a class="subpage-card" href="pages/variants/beta.html">
+        <h3>Beta</h3>
+        <p>Immune-escape-relevant variant with a defining RBD substitution constellation.</p>
+      </a>
+      <a class="subpage-card" href="pages/variants/delta.html">
+        <h3>Delta</h3>
+        <p>High-fitness lineage associated with major global waves before Omicron-era transitions.</p>
+      </a>
+      <a class="subpage-card" href="pages/variants/omicron-ba2.html">
+        <h3>Omicron (BA.2)</h3>
+        <p>Sublineage profile focused on rapid spread, mutation architecture, and replacement dynamics.</p>
+      </a>
+      <a class="subpage-card" href="pages/variants/omicron-ba45.html">
+        <h3>Omicron (BA.4&amp;5)</h3>
+        <p>Paired sublineage view with comparative surveillance and immune-landscape context.</p>
+      </a>
+      <a class="subpage-card" href="pages/variants/jn1.html">
+        <h3>JN.1</h3>
+        <p>Recent dominant lineage with key RBD adaptations and post-BA.2.86 expansion.</p>
+      </a>
+      <a class="subpage-card" href="pages/variants/kp2.html">
+        <h3>KP.2</h3>
+        <p>Emerging FLiRT-lineage profile with mutation-based immune-evasion interpretation.</p>
+      </a>
+    </div>
+
+    <div class="footnote-block">
+      <h4>External resources</h4>
+      <ul>
+        <li><a href="https://nextstrain.org/ncov" target="_blank" rel="noopener noreferrer">Nextstrain</a> for time-resolved lineage tracking.</li>
+        <li><a href="https://outbreak.info/" target="_blank" rel="noopener noreferrer">outbreak.info</a> for lineage and mutation dashboards.</li>
+        <li><a href="https://www.gisaid.org/" target="_blank" rel="noopener noreferrer">GISAID</a> for sequence data access.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="js/load-components.js"></script>
+</body>
+</html>

@@ -277,6 +277,42 @@
       color: #386a84;
     }
 
+    .pdf-render {
+      width: 100%;
+      border: 1px solid #d5e4ed;
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+      min-height: 240px;
+    }
+
+    .pdf-render-loading {
+      position: relative;
+    }
+
+    .pdf-page-canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-bottom: 1px solid #edf3f7;
+    }
+
+    .pdf-page-canvas:last-child {
+      border-bottom: 0;
+    }
+
+    .pdf-render-half-height {
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media (max-width: 768px) {
+      .pdf-render-half-height {
+        width: 100%;
+      }
+    }
+
     /* 数据表格样式 */
     .data-table-wrapper {
       margin-bottom: 48px;
@@ -311,14 +347,27 @@
     /* 卡片网格 (用于资源、特性等) */
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 30px;
       margin: 32px 0 48px;
+    }
+
+    @media (max-width: 1080px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 780px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .info-card {
       background: white;
       border-radius: 28px;
       padding: 24px 26px;
+      text-align: left;
       transition: all 0.25s ease;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.03);
       border: 1px solid #e2edf2;
@@ -498,6 +547,17 @@
       background: #f3fbff;
     }
 
+    .clade-controls {
+      margin-top: 16px;
+      margin-bottom: 14px;
+    }
+
+    .clade-controls button.is-active {
+      background: #155a74;
+      border-color: #155a74;
+      color: #ffffff;
+    }
+
     .mutations-list {
       display: flex;
       flex-wrap: wrap;
@@ -554,12 +614,35 @@
       display: block;
     }
 
+    .structure-frame-fullscreen-default {
+      height: calc(100vh - 160px);
+      min-height: 820px;
+    }
+
+    .structure-frame-spike-compare {
+      height: 68vh;
+      min-height: 620px;
+    }
+
+    @media (max-width: 900px) {
+      .structure-frame-fullscreen-default {
+        height: 78vh;
+        min-height: 640px;
+      }
+
+      .structure-frame-spike-compare {
+        height: 60vh;
+        min-height: 520px;
+      }
+    }
+
     .subpage-grid {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 20px;
-      margin-top: 24px;
+      max-width: 1120px;
+      margin: 24px auto 0;
     }
 
     .subpage-card {
@@ -567,6 +650,7 @@
       border: 1px solid #dce9f1;
       border-radius: 22px;
       padding: 22px;
+      text-align: left;
       flex: 0 1 calc((100% - 40px) / 3);
       max-width: calc((100% - 40px) / 3);
       min-width: 250px;
@@ -761,4 +845,69 @@
     }
     #navigator ul li a {
       border-radius: 12px;
+    }
+
+    /* ========= Back to Top Button ========= */
+    #back-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: none;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #0b2b3b 0%, #1a4a5f 100%);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #back-to-top:hover {
+      background: linear-gradient(135deg, #1a4a5f 0%, #0b2b3b 100%);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      transform: translateY(-3px);
+    }
+
+    #back-to-top.show {
+      display: flex;
+    }
+
+    @media (max-width: 768px) {
+      #back-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+      }
+    }
+
+    .clade-figure-wrap {
+      width: 100%;
+      border: 1px solid #dbe7ef;
+      border-radius: 14px;
+      background: #f8fbff;
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .clade-figure-wrap object {
+      width: 100%;
+      min-width: 900px;
+      height: 560px;
+      display: block;
+      border: 0;
+      background: #fff;
+    }
+
+    .clade-note {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #4f6373;
     }

@@ -1,0 +1,12 @@
+Lei Sun, Pan Li, Xiaohui Ju, Jian Rao, Wenze Huang, Lili Ren, Shaojun Zhang, Tuanlin Xiong, Kui Xu, Xiaolin Zhou, Mingli Gong, Eric Miska, Qiang Ding, Jianwei Wang, Qiangfeng Cliff Zhang,
+In vivo structural characterization of the SARS-CoV-2 RNA genome identifies host proteins vulnerable to repurposed drugs,
+Cell,
+Volume 184, Issue 7,
+2021,
+Pages 1865-1883.e20,
+ISSN 0092-8674,
+https://doi.org/10.1016/j.cell.2021.02.008.
+(https://www.sciencedirect.com/science/article/pii/S0092867421001586)
+Abstract: Summary
+Severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) is the cause of the ongoing coronavirus disease 2019 (COVID-19) pandemic. Understanding of the RNA virus and its interactions with host proteins could improve therapeutic interventions for COVID-19. By using icSHAPE, we determined the structural landscape of SARS-CoV-2 RNA in infected human cells and from refolded RNAs, as well as the regulatory untranslated regions of SARS-CoV-2 and six other coronaviruses. We validated several structural elements predicted in silico and discovered structural features that affect the translation and abundance of subgenomic viral RNAs in cells. The structural data informed a deep-learning tool to predict 42 host proteins that bind to SARS-CoV-2 RNA. Strikingly, antisense oligonucleotides targeting the structural elements and FDA-approved drugs inhibiting the SARS-CoV-2 RNA binding proteins dramatically reduced SARS-CoV-2 infection in cells derived from human liver and lung tumors. Our findings thus shed light on coronavirus and reveal multiple candidate therapeutics for COVID-19 treatment.
+Keywords: SARS-CoV-2; RNA secondary structure; host factor; RBP binding prediction; drug reproposing
