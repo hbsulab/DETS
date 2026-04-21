@@ -576,6 +576,17 @@
       font-size: 0.88rem;
     }
 
+    button.mutation-pill {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button.mutation-pill.is-active {
+      background: #155a74;
+      color: #ffffff;
+      box-shadow: 0 6px 14px rgba(21, 90, 116, 0.18);
+    }
+
     .comparison-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

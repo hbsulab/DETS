@@ -613,13 +613,12 @@ function renderSequenceComparison(referenceSequence, variantSequence, options = 
 
 function buildMutationPills(mutations, options = {}) {
   const clickable = Boolean(options.clickable);
+  const mutationKind = options.kind || 'protein';
   return mutations.map((mutation) => {
     const normalized = String(mutation || '').trim();
-    const match = normalized.match(/^(?:[A-Z]|del)?(\d+)(?:[A-Z-]|-\d+.*)?$/i) || normalized.match(/^[A-Z-]?(\d+)[A-Z-]?$/i);
-    const position = match ? Number(match[1]) : null;
 
-    if (clickable && position) {
-      return `<button type="button" class="mutation-pill" data-aa-pos="${position}" title="Jump to amino-acid position ${position}">${escapeHtml(normalized)}</button>`;
+    if (clickable) {
+      return `<button type="button" class="mutation-pill" aria-pressed="false" data-mutation-kind="${escapeHtml(mutationKind)}" data-mutation-token="${escapeHtml(normalized)}" title="Toggle ${escapeHtml(mutationKind)} filter ${escapeHtml(normalized)}">${escapeHtml(normalized)}</button>`;
     }
 
     return `<span class="mutation-pill">${escapeHtml(normalized)}</span>`;
@@ -634,6 +633,294 @@ function downloadText(filename, content, mimeType = 'text/plain;charset=utf-8') 
   anchor.download = filename;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const DETS_ARRAY_BUFFER_CACHE = new Map();
+let DETS_XLSX_PROMISE = null;
+let DETS_CORRECTED_WORKBOOK_PROMISE = null;
+
+async function loadXlsxLibrary() {
+  if (window.XLSX) {
+    return window.XLSX;
+  }
+
+  if (DETS_XLSX_PROMISE) {
+    return DETS_XLSX_PROMISE;
+  }
+
+  DETS_XLSX_PROMISE = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    script.async = true;
+    script.onload = () => {
+      if (!window.XLSX) {
+        reject(new Error('XLSX failed to initialize'));
+        return;
+      }
+      resolve(window.XLSX);
+    };
+    script.onerror = () => reject(new Error('Failed to load XLSX library'));
+    document.head.appendChild(script);
+  });
+
+  return DETS_XLSX_PROMISE;
+}
+
+async function fetchArrayBufferCached(path) {
+  if (DETS_ARRAY_BUFFER_CACHE.has(path)) {
+    return DETS_ARRAY_BUFFER_CACHE.get(path);
+  }
+
+  const response = await fetch(path);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${path}: ${response.status}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  DETS_ARRAY_BUFFER_CACHE.set(path, arrayBuffer);
+  return arrayBuffer;
+}
+
+function getVariantWorkbookClassFilters(pageKey) {
+  const filterMap = {
+    alpha: ['Alpha', 'B.1.1.7(Alpha)'],
+    beta: ['Beta', 'B.1.351(Beta)'],
+    delta: ['Delta', 'B.1.617.2(Delta)'],
+    'omicron-ba2': ['BA.2'],
+    'omicron-ba45': ['BA.4/5', 'BA.4&5', 'BA.4', 'BA.5'],
+    jn1: ['JN.1'],
+    kp2: ['KP.2']
+  };
+
+  return filterMap[pageKey] || [pageKey];
+}
+
+function normalizeMutationToken(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function escapeCsv(value) {
+  const text = String(value ?? '');
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function formatWorkbookDate(row) {
+  const year = Number(row.year);
+  const month = Number(row.month);
+  const day = Number(row.day);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return '';
+  }
+
+  const monthText = String(month).padStart(2, '0');
+  const dayText = String(day).padStart(2, '0');
+  return `${year}-${monthText}-${dayText}`;
+}
+
+function formatDateLabel(value) {
+  if (!value) return 'All dates';
+  return value;
+}
+
+const PDB_TITLE_BY_ID = {
+  '7R15': 'Alpha variant SARS-CoV-2 spike with two erect RBDs',
+  '7R14': 'Alpha variant SARS-CoV-2 spike with one erect RBD',
+  '7R13': 'Alpha variant SARS-CoV-2 spike in closed conformation',
+  '7R17': 'Beta variant SARS-CoV-2 spike with two erect RBDs',
+  '7R16': 'Beta variant SARS-CoV-2 spike with one erect RBD',
+  '7VX1': 'SARS-CoV-2 Beta variant spike protein in open state',
+  '8HRI': 'SARS-CoV-2 Delta variant spike protein',
+  '7VHH': 'Delta variant SARS-CoV-2 spike protein',
+  '7W92': 'Open-state SARS-CoV-2 Delta variant spike protein',
+  '7XIW': 'SARS-CoV-2 Omicron BA.2 variant spike (state 1)',
+  '7XIX': 'SARS-CoV-2 Omicron BA.2 variant spike (state 2)',
+  '7XO7': 'SARS-CoV-2 Omicron BA.2 spike trimer with ACE2 bound',
+  '7XNQ': 'SARS-CoV-2 Omicron BA.4 variant spike',
+  '8CIN': 'BA.4 spike glycoprotein in complex with BA.4/5-targeting Fab',
+  '8XSJ': 'SARS-CoV-2 Omicron BA.4 RBD in ACE2/antibody complex context',
+  '8X4H': 'SARS-CoV-2 JN.1 spike structure',
+  '9D8I': 'JN.1 SARS-CoV-2 spike in 1-up conformation',
+  '9D8H': 'JN.1 SARS-CoV-2 spike in 3-down conformation',
+  '9D8L': 'KP.2 SARS-CoV-2 spike in 2-up conformation',
+  '9D8K': 'KP.2 SARS-CoV-2 spike in 1-up conformation',
+  '9D8J': 'KP.2 SARS-CoV-2 spike in 3-down conformation'
+};
+
+function getPdbOptionLabel(pdbId) {
+  const key = String(pdbId || '').toUpperCase();
+  const title = PDB_TITLE_BY_ID[key];
+  return title ? `${key} - ${title}` : key;
+}
+
+async function loadCorrectedWorkbookRows() {
+  if (DETS_CORRECTED_WORKBOOK_PROMISE) {
+    return DETS_CORRECTED_WORKBOOK_PROMISE;
+  }
+
+  DETS_CORRECTED_WORKBOOK_PROMISE = (async () => {
+    const XLSX = await loadXlsxLibrary();
+    const workbookPath = getLocalResourcePath('assets/data/CorrectedData_AfterTimeCorrection.xlsx');
+    const arrayBuffer = await fetchArrayBufferCached(workbookPath);
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const sheetRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+    const headers = (sheetRows.shift() || []).map((header) => String(header || '').trim());
+
+    const rows = sheetRows.map((row, index) => ({
+      rowNumber: index + 2,
+      epiId: row[0] || '',
+      sequence: row[1] || '',
+      substitutionInfo: row[2] || '',
+      substitutionNumber: row[3] || '',
+      monthIndex: row[4] || '',
+      classLabel: row[5] || '',
+      allFreq: row[6] || '',
+      monthlyFreq: row[7] || '',
+      year: row[8] || '',
+      month: row[9] || '',
+      day: row[10] || ''
+    }));
+
+    return { headers, rows };
+  })();
+
+  return DETS_CORRECTED_WORKBOOK_PROMISE;
+}
+
+function mutationTokensFromSelection(selectedMutationMap) {
+  return Array.from(selectedMutationMap.values()).flatMap((tokens) => Array.from(tokens));
+}
+
+function buildCsvFromRows(rows, selectionLabel) {
+  const header = ['Selection', 'EPI_ID', 'Class', 'Date', 'Substitution Info', 'Substitution Number', 'MonthIndex', 'AllFreq', 'MonthlyFreq', 'Sequence'];
+  const lines = [header.join(',')];
+
+  rows.forEach((row) => {
+    lines.push([
+      selectionLabel,
+      row.epiId,
+      row.classLabel,
+      formatWorkbookDate(row),
+      row.substitutionInfo,
+      row.substitutionNumber,
+      row.monthIndex,
+      row.allFreq,
+      row.monthlyFreq,
+      row.sequence
+    ].map(escapeCsv).join(','));
+  });
+
+  return lines.join('\n');
+}
+
+function buildSummaryCsv(pageKey, searchState, matchedRows) {
+  const rows = [
+    ['Field', 'Value'],
+    ['Variant', searchState.variantTitle],
+    ['Page Key', pageKey],
+    ['Date From', formatDateLabel(searchState.dateFrom)],
+    ['Date To', formatDateLabel(searchState.dateTo)],
+    ['Mutation Match Mode', searchState.matchMode.toUpperCase()],
+    ['Selected RNA Mutations', Array.from(searchState.selectedMutations.rna).join(' | ')],
+    ['Selected Spike Mutations', Array.from(searchState.selectedMutations.protein).join(' | ')],
+    ['Matched Sequences', String(matchedRows.length)]
+  ];
+
+  return rows.map((row) => row.map(escapeCsv).join(',')).join('\n');
+}
+
+function buildPreviewTable(headers, row) {
+  if (!row) {
+    return '<p class="sequence-note">No matching rows to preview.</p>';
+  }
+
+  const entries = headers.map((header, index) => {
+    let value = '';
+    switch (index) {
+      case 0: value = row.epiId; break;
+      case 1: value = row.sequence; break;
+      case 2: value = row.substitutionInfo; break;
+      case 3: value = row.substitutionNumber; break;
+      case 4: value = row.monthIndex; break;
+      case 5: value = row.classLabel; break;
+      case 6: value = row.allFreq; break;
+      case 7: value = row.monthlyFreq; break;
+      case 8: value = row.year; break;
+      case 9: value = row.month; break;
+      case 10: value = row.day; break;
+      default: value = '';
+    }
+
+    if (index === 1 && String(value).length > 140) {
+      value = `${String(value).slice(0, 137)}...`;
+    }
+
+    return `<tr><th>${escapeHtml(header)}</th><td>${escapeHtml(value)}</td></tr>`;
+  }).join('');
+
+  return `
+    <div class="data-table-wrapper">
+      <h3>Preview Entry</h3>
+      <table class="data-table">
+        <tbody>
+          ${entries}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function buildSequencePreview(sequence) {
+  const formatted = String(sequence || '').match(/.{1,80}/g) || [String(sequence || '')];
+  return formatted.join('\n');
+}
+
+function rowMatchesMutationSelection(row, selectedMutationMap, matchMode) {
+  const selectedTokens = mutationTokensFromSelection(selectedMutationMap);
+  if (!selectedTokens.length) {
+    return true;
+  }
+
+  const haystack = `${row.substitutionInfo} ${row.sequence} ${row.classLabel}`.toLowerCase();
+  if (matchMode === 'all') {
+    return selectedTokens.every((token) => haystack.includes(token.toLowerCase()));
+  }
+
+  return selectedTokens.some((token) => haystack.includes(token.toLowerCase()));
+}
+
+function rowMatchesDateRange(row, dateFrom, dateTo) {
+  const rowDate = formatWorkbookDate(row);
+  if (!rowDate) {
+    return false;
+  }
+
+  if (dateFrom && rowDate < dateFrom) {
+    return false;
+  }
+  if (dateTo && rowDate > dateTo) {
+    return false;
+  }
+  return true;
+}
+
+function getWorkbookDateBounds(rows) {
+  const dates = rows.map((row) => formatWorkbookDate(row)).filter(Boolean).sort();
+  if (!dates.length) {
+    return { min: '', max: '' };
+  }
+
+  return {
+    min: dates[0],
+    max: dates[dates.length - 1]
+  };
+}
+
+function buildSelectedPills(mutations, kind, selectedMutationMap) {
+  return buildMutationPills(mutations, { clickable: true, kind });
 }
 
 function createTreeSvg(nodes, title) {
@@ -1001,10 +1288,6 @@ function renderVariantWidget(pageKey) {
     fetchTextCached(getLocalResourcePath('assets/data/VariantsRNA.txt'))
   ]).then(([fastaText, variantClassText, variantRnaText]) => {
     const classRows = parseVariantClassTable(variantClassText);
-    const variantOptions = classRows.map((row) => ({
-      value: row.lineage,
-      label: `${row.short} (${row.lineage})`
-    }));
     const targetClassRow = findVariantClassRow(classRows, data);
     const inferredPath = buildVariantPathFromClassRows(classRows, targetClassRow);
     const treeNodes = Array.isArray(data.path) && data.path.length >= 2 ? data.path : (inferredPath.length >= 2 ? inferredPath : ['Wuhan', data.title]);
@@ -1016,9 +1299,75 @@ function renderVariantWidget(pageKey) {
 
     const spikeRna = extractSpikeRnaFromGenome(genomeRecord.sequence);
     const referenceProtein = translateRnaSequence(spikeRna);
-    const variantProtein = applyMutations(referenceProtein, data.proteinMutations);
     const container = document.querySelector('#main_container .container');
     if (!container) return;
+
+    const workbookClassFilters = getVariantWorkbookClassFilters(pageKey).map((value) => String(value || '').toLowerCase());
+    const mutationSelection = {
+      protein: new Set(),
+      rna: new Set()
+    };
+    let currentSearchResults = [];
+    let currentSearchHeaders = [];
+
+    const seqSection = document.createElement('div');
+    seqSection.className = 'text-block';
+    seqSection.innerHTML = `
+      <h2>Reference sequence, defining RNA, and spike mutations</h2>
+      <!-- Reference, variant catalogs, and workbook lineage label are intentionally hidden for now. -->
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>Defining RNA mutations</h4>
+          <div class="mutations-list" data-mutation-group="rna">${buildMutationPills(effectiveRnaMutations, { clickable: true, kind: 'rna' })}</div>
+        </div>
+        <div class="comparison-card">
+          <h4>Defining spike mutations</h4>
+          <div class="mutations-list" data-mutation-group="protein">${buildMutationPills(data.proteinMutations, { clickable: true, kind: 'protein' })}</div>
+        </div>
+      </div>
+      <div class="download-toolbar">
+        <div>
+          <label for="dateFrom-${pageKey}">Date from</label>
+          <input id="dateFrom-${pageKey}" type="date" lang="en" data-date-locale="en">
+        </div>
+        <div>
+          <label for="dateTo-${pageKey}">Date to</label>
+          <input id="dateTo-${pageKey}" type="date" lang="en" data-date-locale="en">
+        </div>
+        <div>
+          <label for="mutationMatch-${pageKey}">Mutation match</label>
+          <select id="mutationMatch-${pageKey}">
+            <option value="any">ANY selected mutation</option>
+            <option value="all">ALL selected mutations</option>
+          </select>
+        </div>
+      </div>
+      <div class="button-row">
+        <button type="button" id="searchButton-${pageKey}">Search</button>
+      </div>
+      <p class="sequence-note">Choose a date range, toggle defining RNA/spike mutations, then press Search to preview the first matching Alpha-class sequence from CorrectedData_AfterTimeCorrection.xlsx.</p>
+    `;
+
+    const resultsSection = document.createElement('div');
+    resultsSection.className = 'visualization-block';
+    resultsSection.hidden = true;
+    resultsSection.innerHTML = `
+      <h3>Search Results</h3>
+      <p class="sequence-note" id="searchSummary-${pageKey}"></p>
+      <div id="previewTable-${pageKey}"></div>
+      <div class="feature-panel">
+        <h4>Sequence Preview</h4>
+        <pre class="sequence-viewer" id="sequencePreview-${pageKey}" style="white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; text-align: left; width: 100%; max-width: 820px; margin: 0 auto;">Press Search to preview a sequence.</pre>
+      </div>
+      <div class="button-row">
+        <button type="button" data-download="summary" disabled>Download mutation summary</button>
+        <button type="button" data-download="fasta" disabled>Download synthetic spike FASTA</button>
+        <button type="button" data-download="selected-rna" disabled>Download selected spike RNA (CSV)</button>
+        <button type="button" data-download="selected-protein" disabled>Download selected spike protein (CSV)</button>
+        <button type="button" data-download="reference-rna" disabled>Download Wuhan spike RNA FASTA</button>
+        <button type="button" data-download="reference-protein" disabled>Download Wuhan spike protein FASTA</button>
+      </div>
+    `;
 
     const treeSection = document.createElement('div');
     treeSection.className = 'visualization-block';
@@ -1027,36 +1376,6 @@ function renderVariantWidget(pageKey) {
       <div class="viz-placeholder">${createTreeSvg(treeNodes, `${data.title}: Wuhan to lineage subset`)}</div>
       ${buildPhyloResourceLinks(targetClassRow, data)}
     `;
-
-    const pdbTitleById = {
-      '7R15': 'Alpha variant SARS-CoV-2 spike with two erect RBDs',
-      '7R14': 'Alpha variant SARS-CoV-2 spike with one erect RBD',
-      '7R13': 'Alpha variant SARS-CoV-2 spike in closed conformation',
-      '7R17': 'Beta variant SARS-CoV-2 spike with two erect RBDs',
-      '7R16': 'Beta variant SARS-CoV-2 spike with one erect RBD',
-      '7VX1': 'SARS-CoV-2 Beta variant spike protein in open state',
-      '8HRI': 'SARS-CoV-2 Delta variant spike protein',
-      '7VHH': 'Delta variant SARS-CoV-2 spike protein',
-      '7W92': 'Open-state SARS-CoV-2 Delta variant spike protein',
-      '7XIW': 'SARS-CoV-2 Omicron BA.2 variant spike (state 1)',
-      '7XIX': 'SARS-CoV-2 Omicron BA.2 variant spike (state 2)',
-      '7XO7': 'SARS-CoV-2 Omicron BA.2 spike trimer with ACE2 bound',
-      '7XNQ': 'SARS-CoV-2 Omicron BA.4 variant spike',
-      '8CIN': 'BA.4 spike glycoprotein in complex with BA.4/5-targeting Fab',
-      '8XSJ': 'SARS-CoV-2 Omicron BA.4 RBD in ACE2/antibody complex context',
-      '8X4H': 'SARS-CoV-2 JN.1 spike structure',
-      '9D8I': 'JN.1 SARS-CoV-2 spike in 1-up conformation',
-      '9D8H': 'JN.1 SARS-CoV-2 spike in 3-down conformation',
-      '9D8L': 'KP.2 SARS-CoV-2 spike in 2-up conformation',
-      '9D8K': 'KP.2 SARS-CoV-2 spike in 1-up conformation',
-      '9D8J': 'KP.2 SARS-CoV-2 spike in 3-down conformation'
-    };
-
-    const getPdbOptionLabel = (pdbId) => {
-      const key = String(pdbId || '').toUpperCase();
-      const title = pdbTitleById[key];
-      return title ? `${key} - ${title}` : key;
-    };
 
     const structureSection = document.createElement('div');
     structureSection.className = 'visualization-block';
@@ -1078,104 +1397,18 @@ function renderVariantWidget(pageKey) {
       </div>
     `;
 
-    const seqSection = document.createElement('div');
-    seqSection.className = 'text-block';
-    seqSection.innerHTML = `
-      <h2>Reference sequence, defining RNA, and spike mutations</h2>
-      <p><strong>Reference:</strong> Wuhan-Hu-1 spike region extracted from <a href="../../assets/data/Wuhan.fasta" target="_blank" rel="noopener noreferrer">Wuhan.fasta</a> and cross-referenced with <a href="../../assets/data/CorrectedData_AfterTimeCorrection.xlsx" target="_blank" rel="noopener noreferrer">CorrectedData_AfterTimeCorrection.xlsx</a>.</p>
-      <p><strong>Variant catalogs:</strong> <a href="../../assets/data/Variants.txt" target="_blank" rel="noopener noreferrer">Variants.txt</a> and <a href="../../assets/data/VariantsRNA.txt" target="_blank" rel="noopener noreferrer">VariantsRNA.txt</a> for lineage labels and defining RNA mutations.</p>
-      <p><strong>Workbook lineage label:</strong> ${escapeHtml(data.workbookClass)}</p>
-      <div class="comparison-grid">
-        <div class="comparison-card">
-          <h4>Defining RNA mutations</h4>
-          <div class="mutations-list">${buildMutationPills(effectiveRnaMutations)}</div>
-        </div>
-        <div class="comparison-card">
-          <h4>Defining spike mutations</h4>
-          <div class="mutations-list">${buildMutationPills(data.proteinMutations, { clickable: true })}</div>
-        </div>
-      </div>
-      <div class="download-toolbar">
-        <div>
-          <label for="monthSelect-${pageKey}">Month</label>
-          <select id="monthSelect-${pageKey}">
-            <option value="all">All months</option>
-            <option value="2020-01">2020-01</option>
-            <option value="2021-01">2021-01</option>
-            <option value="2022-01">2022-01</option>
-            <option value="2023-01">2023-01</option>
-            <option value="2024-01">2024-01</option>
-            <option value="2025-01">2025-01</option>
-          </select>
-        </div>
-        <div>
-          <label for="epiSelect-${pageKey}">EPI_ID</label>
-          <select id="epiSelect-${pageKey}">
-            <option value="all">All representative IDs</option>
-            ${data.epiIds.map((epiId) => `<option value="${epiId}">${epiId}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <label for="mutationSelect-${pageKey}">Mutation set</label>
-          <select id="mutationSelect-${pageKey}">
-            <option value="all">All defining mutations</option>
-            <option value="protein">Spike mutations only</option>
-            <option value="rna">RNA mutations only</option>
-          </select>
-        </div>
-      </div>
-      <div class="button-row">
-        <button type="button" data-download="summary">Download mutation summary</button>
-        <button type="button" data-download="fasta">Download synthetic spike FASTA</button>
-        <button type="button" data-download="reference-rna">Download Wuhan spike RNA FASTA</button>
-        <button type="button" data-download="reference-protein">Download Wuhan spike protein FASTA</button>
-        <button type="button" data-download="selection">Download selected records (TSV)</button>
-        <a href="../../assets/data/CorrectedData_AfterTimeCorrection.xlsx" target="_blank" rel="noopener noreferrer">Download corrected workbook</a>
-        <a href="../../assets/data/InputVariantsLMCM_20260118.xlsx" target="_blank" rel="noopener noreferrer">Download input workbook</a>
-      </div>
-      <p class="sequence-note">Filters include month, variant label, and EPI_ID. Downloads are generated from the same reference files and variant tables used by this page.</p>
-    `;
-
-    const compareSection = document.createElement('div');
-    compareSection.className = 'visualization-block';
-    compareSection.innerHTML = `
-      <h3>Interactive Wuhan vs variant sequence compare</h3>
-      <div class="download-toolbar">
-        <div>
-          <label for="comparePosition-${pageKey}">Amino-acid position</label>
-          <input id="comparePosition-${pageKey}" type="number" min="1" max="${referenceProtein.length}" value="" placeholder="e.g. 452">
-        </div>
-        <div>
-          <label for="compareMutOnly-${pageKey}">View filter</label>
-          <div style="padding-top:10px;">
-            <input id="compareMutOnly-${pageKey}" type="checkbox">
-            <label for="compareMutOnly-${pageKey}">Show mutation chunks only</label>
-          </div>
-        </div>
-      </div>
-      <div class="button-row">
-        <button type="button" id="compareGo-${pageKey}">Go to position</button>
-        <button type="button" id="compareReset-${pageKey}">Reset compare view</button>
-      </div>
-      <div class="viz-placeholder">
-        <div class="sequence-viewer" id="sequenceViewer-${pageKey}">${renderSequenceComparison(referenceProtein, variantProtein)}</div>
-      </div>
-      <p class="sequence-note" id="compareStatus-${pageKey}"></p>
-      <p class="sequence-note">Mutated positions are highlighted in both rows. The view is generated from the Wuhan spike reference and the lineage-defining mutation list.</p>
-    `;
-
     const introBlock = container.querySelector('.text-block');
     const insertionAnchor = introBlock ? introBlock.nextElementSibling : container.firstElementChild;
     if (insertionAnchor) {
       container.insertBefore(treeSection, insertionAnchor);
       container.insertBefore(structureSection, insertionAnchor);
       container.insertBefore(seqSection, insertionAnchor);
-      container.insertBefore(compareSection, insertionAnchor);
+      container.insertBefore(resultsSection, insertionAnchor);
     } else {
       container.appendChild(treeSection);
       container.appendChild(structureSection);
       container.appendChild(seqSection);
-      container.appendChild(compareSection);
+      container.appendChild(resultsSection);
     }
 
     const pdbSelect = structureSection.querySelector(`#pdbSelect-${pageKey}`);
@@ -1196,149 +1429,180 @@ function renderVariantWidget(pageKey) {
       pdbSelect.addEventListener('change', () => loadVariantStructure(pdbSelect.value));
     }
 
-    const mutationModeSelect = seqSection.querySelector(`#mutationSelect-${pageKey}`);
-    const sequenceViewer = compareSection.querySelector(`#sequenceViewer-${pageKey}`);
-    const compareStatus = compareSection.querySelector(`#compareStatus-${pageKey}`);
-    const comparePositionInput = compareSection.querySelector(`#comparePosition-${pageKey}`);
-    const compareMutOnlyToggle = compareSection.querySelector(`#compareMutOnly-${pageKey}`);
-    const compareGoButton = compareSection.querySelector(`#compareGo-${pageKey}`);
-    const compareResetButton = compareSection.querySelector(`#compareReset-${pageKey}`);
-    let compareFocusPosition = null;
+    const dateFromInput = seqSection.querySelector(`#dateFrom-${pageKey}`);
+    const dateToInput = seqSection.querySelector(`#dateTo-${pageKey}`);
+    const mutationMatchSelect = seqSection.querySelector(`#mutationMatch-${pageKey}`);
+    const searchButton = seqSection.querySelector(`#searchButton-${pageKey}`);
+    const summaryNote = resultsSection.querySelector(`#searchSummary-${pageKey}`);
+    const previewTableHost = resultsSection.querySelector(`#previewTable-${pageKey}`);
+    const sequencePreview = resultsSection.querySelector(`#sequencePreview-${pageKey}`);
+    const downloadButtons = Array.from(resultsSection.querySelectorAll('[data-download]'));
 
-    const getCompareProteinMutations = () => {
-      if (!mutationModeSelect) return data.proteinMutations;
-      const mode = mutationModeSelect.value;
-      if (mode === 'rna') return [];
-      return data.proteinMutations;
-    };
-
-    const updateSequenceComparison = () => {
-      const compareVariantProtein = applyMutations(referenceProtein, getCompareProteinMutations());
-      const mutationPositions = getMutationPositions(referenceProtein, compareVariantProtein);
-      const mode = mutationModeSelect ? mutationModeSelect.value : 'all';
-      const focusPosition = compareFocusPosition && compareFocusPosition >= 1 && compareFocusPosition <= referenceProtein.length ? compareFocusPosition : null;
-
-      sequenceViewer.innerHTML = renderSequenceComparison(referenceProtein, compareVariantProtein, {
-        mutationsOnly: compareMutOnlyToggle ? compareMutOnlyToggle.checked : false,
-        focusPosition
-      });
-
-      if (compareStatus) {
-        if (mode === 'rna') {
-          compareStatus.textContent = 'RNA-only mode selected: spike amino-acid sequence remains unchanged.';
-        } else {
-          compareStatus.textContent = `Detected ${mutationPositions.length} amino-acid differences${focusPosition ? `; focused position: ${focusPosition}` : ''}.`;
+    loadCorrectedWorkbookRows().then((workbookData) => {
+      const bounds = getWorkbookDateBounds(workbookData.rows);
+      if (dateFromInput) {
+        dateFromInput.min = bounds.min;
+        dateFromInput.max = bounds.max;
+        if (!dateFromInput.value) {
+          dateFromInput.value = bounds.min;
         }
       }
-
-      if (focusPosition) {
-        const focusChunk = sequenceViewer.querySelector('[data-focus-chunk="true"]');
-        if (focusChunk) {
-          focusChunk.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (dateToInput) {
+        dateToInput.min = bounds.min;
+        dateToInput.max = bounds.max;
+        if (!dateToInput.value) {
+          dateToInput.value = bounds.max;
         }
       }
+    }).catch(() => {});
+
+    const updatePillState = () => {
+      seqSection.querySelectorAll('[data-mutation-token]').forEach((pill) => {
+        const kind = pill.dataset.mutationKind || 'protein';
+        const token = normalizeMutationToken(pill.dataset.mutationToken);
+        const selectedSet = mutationSelection[kind];
+        const isActive = selectedSet.has(token);
+        pill.classList.toggle('is-active', isActive);
+        pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
     };
 
-    if (mutationModeSelect) {
-      mutationModeSelect.addEventListener('change', updateSequenceComparison);
-    }
+    seqSection.addEventListener('click', (event) => {
+      const pill = event.target.closest('[data-mutation-token]');
+      if (!pill) {
+        return;
+      }
 
-    if (compareMutOnlyToggle) {
-      compareMutOnlyToggle.addEventListener('change', updateSequenceComparison);
-    }
-
-    if (compareGoButton) {
-      compareGoButton.addEventListener('click', () => {
-        const value = Number(comparePositionInput ? comparePositionInput.value : 0);
-        compareFocusPosition = Number.isFinite(value) && value >= 1 ? Math.floor(value) : null;
-        updateSequenceComparison();
-      });
-    }
-
-    if (comparePositionInput) {
-      comparePositionInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          const value = Number(comparePositionInput.value);
-          compareFocusPosition = Number.isFinite(value) && value >= 1 ? Math.floor(value) : null;
-          updateSequenceComparison();
-        }
-      });
-    }
-
-    if (compareResetButton) {
-      compareResetButton.addEventListener('click', () => {
-        compareFocusPosition = null;
-        if (comparePositionInput) comparePositionInput.value = '';
-        if (compareMutOnlyToggle) compareMutOnlyToggle.checked = false;
-        updateSequenceComparison();
-      });
-    }
-
-    seqSection.querySelectorAll('[data-aa-pos]').forEach((pill) => {
-      pill.addEventListener('click', () => {
-        const value = Number(pill.getAttribute('data-aa-pos'));
-        if (!Number.isFinite(value) || value < 1) return;
-        compareFocusPosition = Math.floor(value);
-        if (comparePositionInput) comparePositionInput.value = String(compareFocusPosition);
-        if (mutationModeSelect && mutationModeSelect.value === 'rna') {
-          mutationModeSelect.value = 'protein';
-        }
-        updateSequenceComparison();
-      });
+      const kind = pill.dataset.mutationKind || 'protein';
+      const token = normalizeMutationToken(pill.dataset.mutationToken);
+      const selectedSet = mutationSelection[kind];
+      if (selectedSet.has(token)) {
+        selectedSet.delete(token);
+      } else {
+        selectedSet.add(token);
+      }
+      updatePillState();
     });
 
-    updateSequenceComparison();
+    const setDownloadButtonsEnabled = (enabled) => {
+      downloadButtons.forEach((button) => {
+        button.disabled = !enabled;
+      });
+    };
 
-    seqSection.querySelectorAll('[data-download]').forEach((button) => {
+    const renderSearchResults = (rows) => {
+      resultsSection.hidden = false;
+      if (!rows.length) {
+        summaryNote.textContent = 'No matching sequences found for the current filters.';
+        previewTableHost.innerHTML = '<p class="sequence-note">No preview available.</p>';
+        sequencePreview.textContent = 'No sequence available.';
+        setDownloadButtonsEnabled(false);
+        return;
+      }
+
+      const firstRow = rows[0];
+      summaryNote.textContent = `${rows.length} matching sequences found. Previewing the first matching entry.`;
+      previewTableHost.innerHTML = buildPreviewTable(currentSearchHeaders, firstRow);
+      sequencePreview.textContent = buildSequencePreview(firstRow.sequence);
+      setDownloadButtonsEnabled(true);
+    };
+
+    const runSearch = async () => {
+      if (searchButton) {
+        searchButton.disabled = true;
+        searchButton.textContent = 'Searching...';
+      }
+
+      try {
+        const workbookData = await loadCorrectedWorkbookRows();
+        currentSearchHeaders = workbookData.headers;
+
+        const dateFrom = dateFromInput ? dateFromInput.value : '';
+        const dateTo = dateToInput ? dateToInput.value : '';
+        const matchMode = mutationMatchSelect ? mutationMatchSelect.value : 'any';
+
+        currentSearchResults = workbookData.rows.filter((row) => {
+          const classLabel = String(row.classLabel || '').toLowerCase();
+          const classMatch = workbookClassFilters.some((token) => classLabel.includes(token));
+          if (!classMatch) {
+            return false;
+          }
+
+          if (!rowMatchesDateRange(row, dateFrom, dateTo)) {
+            return false;
+          }
+
+          return rowMatchesMutationSelection(row, mutationSelection, matchMode);
+        });
+
+        renderSearchResults(currentSearchResults);
+      } catch (error) {
+        resultsSection.hidden = false;
+        summaryNote.textContent = `Unable to load the workbook: ${error.message}`;
+        previewTableHost.innerHTML = '<p class="sequence-note">Workbook search failed.</p>';
+        sequencePreview.textContent = 'Workbook search failed.';
+        setDownloadButtonsEnabled(false);
+      } finally {
+        if (searchButton) {
+          searchButton.disabled = false;
+          searchButton.textContent = 'Search';
+        }
+      }
+    };
+
+    if (searchButton) {
+      searchButton.addEventListener('click', runSearch);
+    }
+
+    downloadButtons.forEach((button) => {
       button.addEventListener('click', () => {
-        const month = seqSection.querySelector(`#monthSelect-${pageKey}`).value;
-        const epiId = seqSection.querySelector(`#epiSelect-${pageKey}`).value;
-        const selectedVariant = data.workbookClass;
-        const mutationMode = seqSection.querySelector(`#mutationSelect-${pageKey}`).value;
-        const selectedMutations = mutationMode === 'protein' ? data.proteinMutations : mutationMode === 'rna' ? effectiveRnaMutations : data.proteinMutations.concat(effectiveRnaMutations);
-
-        const summary = [
-          `Variant\t${data.title}`,
-          `Variant filter\t${selectedVariant}`,
-          `Month\t${month}`,
-          `EPI_ID\t${epiId}`,
-          `Mutation mode\t${mutationMode}`,
-          `Protein mutations\t${data.proteinMutations.join('; ')}`,
-          `RNA mutations\t${effectiveRnaMutations.join('; ')}`,
-          `Selected mutation count\t${selectedMutations.length}`
-        ].join('\n');
+        if (!currentSearchResults.length && button.dataset.download !== 'reference-rna' && button.dataset.download !== 'reference-protein' && button.dataset.download !== 'fasta') {
+          return;
+        }
 
         if (button.dataset.download === 'summary') {
-          downloadText(`${pageKey}-${month}-mutation-summary.tsv`, summary, 'text/tab-separated-values;charset=utf-8');
+          const summaryCsv = buildSummaryCsv(pageKey, {
+            variantTitle: data.title,
+            dateFrom: dateFromInput ? dateFromInput.value : '',
+            dateTo: dateToInput ? dateToInput.value : '',
+            matchMode: mutationMatchSelect ? mutationMatchSelect.value : 'any',
+            selectedMutations: mutationSelection
+          }, currentSearchResults);
+          downloadText(`${pageKey}-mutation-summary.csv`, summaryCsv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (button.dataset.download === 'fasta') {
+          const selectedProteinTokens = mutationTokensFromSelection({ protein: mutationSelection.protein });
+          const syntheticProtein = applyMutations(referenceProtein, selectedProteinTokens);
+          downloadText(`${pageKey}-synthetic-spike.fasta`, `>${data.title} synthetic spike\n${syntheticProtein}\n`);
+          return;
+        }
+
+        if (button.dataset.download === 'selected-rna') {
+          const csv = buildCsvFromRows(currentSearchResults, 'RNA');
+          downloadText(`${pageKey}-selected-spike-rna.csv`, csv, 'text/csv;charset=utf-8');
+          return;
+        }
+
+        if (button.dataset.download === 'selected-protein') {
+          const csv = buildCsvFromRows(currentSearchResults, 'Protein');
+          downloadText(`${pageKey}-selected-spike-protein.csv`, csv, 'text/csv;charset=utf-8');
           return;
         }
 
         if (button.dataset.download === 'reference-rna') {
-          downloadText(`wuhan-spike-rna.fasta`, `>Wuhan-Hu-1 spike RNA\n${spikeRna}\n`);
+          downloadText(`${pageKey}-wuhan-spike-rna.fasta`, `>Wuhan-Hu-1 spike RNA\n${spikeRna}\n`);
           return;
         }
 
         if (button.dataset.download === 'reference-protein') {
-          downloadText(`wuhan-spike-protein.fasta`, `>Wuhan-Hu-1 spike protein\n${referenceProtein}\n`);
-          return;
+          downloadText(`${pageKey}-wuhan-spike-protein.fasta`, `>Wuhan-Hu-1 spike protein\n${referenceProtein}\n`);
         }
-
-        if (button.dataset.download === 'selection') {
-          const selectedIds = epiId === 'all' ? data.epiIds.join('; ') : epiId;
-          const tsv = [
-            'Variant\tVariantFilter\tMonth\tEPI_ID\tWorkbookClass\tMutationMode\tMutationCount',
-            `${data.title}\t${selectedVariant}\t${month}\t${selectedIds}\t${data.workbookClass}\t${mutationMode}\t${selectedMutations.length}`
-          ].join('\n');
-          downloadText(`${pageKey}-${month}-selection.tsv`, tsv, 'text/tab-separated-values;charset=utf-8');
-          return;
-        }
-
-        const filteredProteinMutations = selectedMutations.filter((mutation) => mutation.match(/^[A-Z]?\d+[A-Z-]$/i) || mutation.startsWith('del'));
-        const variantProteinSequence = applyMutations(referenceProtein, filteredProteinMutations);
-        downloadText(`${pageKey}-${month}-spike.fasta`, `>${data.title} | ${month}\n${variantProteinSequence}\n`);
       });
     });
+
+    setDownloadButtonsEnabled(false);
 
     applyVariantPageLayout(container);
   });
