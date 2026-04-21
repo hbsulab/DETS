@@ -638,6 +638,62 @@ function downloadText(filename, content, mimeType = 'text/plain;charset=utf-8') 
 const DETS_ARRAY_BUFFER_CACHE = new Map();
 let DETS_XLSX_PROMISE = null;
 let DETS_CORRECTED_WORKBOOK_PROMISE = null;
+let DETS_WORKBOOK_WORKER = null;
+let DETS_WORKBOOK_WORKER_REQUEST_ID = 0;
+const DETS_WORKBOOK_WORKER_PENDING = new Map();
+let DETS_WORKER_DISABLED = false;
+const DETS_ASSET_VERSION = '20260421-1';
+let DETS_SEARCH_FALLBACK_BOUND = false;
+
+function ensureDebugBadge() {
+  let badge = document.getElementById('dets-debug-badge');
+  if (badge) return badge;
+
+  badge = document.createElement('div');
+  badge.id = 'dets-debug-badge';
+  badge.style.position = 'fixed';
+  badge.style.left = '12px';
+  badge.style.bottom = '12px';
+  badge.style.zIndex = '99999';
+  badge.style.padding = '8px 10px';
+  badge.style.borderRadius = '8px';
+  badge.style.background = 'rgba(18, 36, 52, 0.9)';
+  badge.style.color = '#ffffff';
+  badge.style.fontSize = '12px';
+  badge.style.fontFamily = 'monospace';
+  badge.style.maxWidth = '360px';
+  badge.style.pointerEvents = 'none';
+  badge.textContent = 'DETS status: script loaded';
+  document.body.appendChild(badge);
+  return badge;
+}
+
+function updateDebugBadge(text) {
+  if (document.body?.dataset?.pageKind !== 'variant') {
+    return;
+  }
+  const badge = ensureDebugBadge();
+  badge.textContent = `DETS status: ${text}`;
+}
+
+function ensureSearchFallbackBinding() {
+  if (DETS_SEARCH_FALLBACK_BOUND) {
+    return;
+  }
+
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('button[id^="searchButton-"]');
+    if (!button) return;
+    if (button.dataset.searchBusy === 'true') return;
+    if (typeof button.__detsRunSearch !== 'function') return;
+
+    updateDebugBadge(`fallback click: ${button.id}`);
+    event.preventDefault();
+    button.__detsRunSearch();
+  }, true);
+
+  DETS_SEARCH_FALLBACK_BOUND = true;
+}
 
 async function loadXlsxLibrary() {
   if (window.XLSX) {
@@ -755,6 +811,100 @@ function getPdbOptionLabel(pdbId) {
   return title ? `${key} - ${title}` : key;
 }
 
+function ensureWorkbookWorker() {
+  if (DETS_WORKER_DISABLED) {
+    throw new Error('Worker disabled');
+  }
+
+  if (DETS_WORKBOOK_WORKER) {
+    return DETS_WORKBOOK_WORKER;
+  }
+
+  const workerPath = `${getLocalResourcePath('js/workbook-search-worker.js')}?v=${encodeURIComponent(DETS_ASSET_VERSION)}`;
+  DETS_WORKBOOK_WORKER = new Worker(workerPath);
+  DETS_WORKBOOK_WORKER.onmessage = (event) => {
+    const message = event.data || {};
+    const pending = DETS_WORKBOOK_WORKER_PENDING.get(message.id);
+    if (!pending) {
+      return;
+    }
+
+    if (message.progress) {
+      if (typeof pending.onProgress === 'function') {
+        pending.onProgress(message.progress);
+      }
+      return;
+    }
+
+    DETS_WORKBOOK_WORKER_PENDING.delete(message.id);
+    if (message.ok) {
+      pending.resolve(message.result);
+    } else {
+      pending.reject(new Error(message.error || 'Workbook worker failed'));
+    }
+  };
+
+  DETS_WORKBOOK_WORKER.onerror = (event) => {
+    const err = event && event.message ? event.message : 'Workbook worker error';
+    DETS_WORKBOOK_WORKER_PENDING.forEach((pending) => pending.reject(new Error(err)));
+    DETS_WORKBOOK_WORKER_PENDING.clear();
+    DETS_WORKER_DISABLED = true;
+    try {
+      DETS_WORKBOOK_WORKER.terminate();
+    } catch (error) {
+      // ignore terminate failures
+    }
+    DETS_WORKBOOK_WORKER = null;
+  };
+
+  return DETS_WORKBOOK_WORKER;
+}
+
+function workbookWorkerRequest(type, payload, onProgress) {
+  return new Promise((resolve, reject) => {
+    const worker = ensureWorkbookWorker();
+    DETS_WORKBOOK_WORKER_REQUEST_ID += 1;
+    const id = DETS_WORKBOOK_WORKER_REQUEST_ID;
+    DETS_WORKBOOK_WORKER_PENDING.set(id, { resolve, reject, onProgress });
+    worker.postMessage({ id, type, payload });
+  });
+}
+
+function workbookWorkerRequestWithTimeout(type, payload, onProgress, timeoutMs = 180000) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error('Worker timed out'));
+      DETS_WORKER_DISABLED = true;
+      if (DETS_WORKBOOK_WORKER) {
+        try {
+          DETS_WORKBOOK_WORKER.terminate();
+        } catch (error) {
+          // ignore terminate failures
+        }
+        DETS_WORKBOOK_WORKER = null;
+      }
+      DETS_WORKBOOK_WORKER_PENDING.clear();
+    }, timeoutMs);
+
+    workbookWorkerRequest(type, payload, onProgress)
+      .then((result) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 async function loadCorrectedWorkbookRows() {
   if (DETS_CORRECTED_WORKBOOK_PROMISE) {
     return DETS_CORRECTED_WORKBOOK_PROMISE;
@@ -768,37 +918,118 @@ async function loadCorrectedWorkbookRows() {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const sheetRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
     const headers = (sheetRows.shift() || []).map((header) => String(header || '').trim());
+    const rows = [];
+    const classBuckets = new Map();
+    let minDate = '';
+    let maxDate = '';
 
-    const rows = sheetRows.map((row, index) => ({
-      rowNumber: index + 2,
-      epiId: row[0] || '',
-      sequence: row[1] || '',
-      substitutionInfo: row[2] || '',
-      substitutionNumber: row[3] || '',
-      monthIndex: row[4] || '',
-      classLabel: row[5] || '',
-      allFreq: row[6] || '',
-      monthlyFreq: row[7] || '',
-      year: row[8] || '',
-      month: row[9] || '',
-      day: row[10] || ''
-    }));
+    sheetRows.forEach((row, index) => {
+      const entry = {
+        rowNumber: index + 2,
+        epiId: row[0] || '',
+        substitutionInfo: row[2] || '',
+        substitutionNumber: row[3] || '',
+        monthIndex: row[4] || '',
+        classLabel: row[5] || '',
+        allFreq: row[6] || '',
+        monthlyFreq: row[7] || '',
+        year: row[8] || '',
+        month: row[9] || '',
+        day: row[10] || ''
+      };
 
-    return { headers, rows };
+      entry.rowDate = formatWorkbookDate(entry);
+      entry.classLabelLower = String(entry.classLabel || '').toLowerCase();
+
+      if (entry.rowDate) {
+        if (!minDate || entry.rowDate < minDate) minDate = entry.rowDate;
+        if (!maxDate || entry.rowDate > maxDate) maxDate = entry.rowDate;
+      }
+
+      if (!classBuckets.has(entry.classLabelLower)) {
+        classBuckets.set(entry.classLabelLower, []);
+      }
+      classBuckets.get(entry.classLabelLower).push(entry);
+      rows.push(entry);
+    });
+
+    // Release the temporary 2D sheet array once indexed to reduce peak memory.
+    sheetRows.length = 0;
+
+    return {
+      XLSX,
+      sheet,
+      headers,
+      rows,
+      classBuckets,
+      sequenceCache: new Map(),
+      dateBounds: {
+        min: minDate,
+        max: maxDate
+      }
+    };
   })();
 
   return DETS_CORRECTED_WORKBOOK_PROMISE;
 }
 
 function mutationTokensFromSelection(selectedMutationMap) {
-  return Array.from(selectedMutationMap.values()).flatMap((tokens) => Array.from(tokens));
+  if (!selectedMutationMap) {
+    return [];
+  }
+
+  const flattenTokens = (collection) => {
+    if (!collection) return [];
+    if (collection instanceof Set) return Array.from(collection);
+    if (Array.isArray(collection)) return collection;
+    return [collection];
+  };
+
+  if (selectedMutationMap instanceof Map) {
+    return Array.from(selectedMutationMap.values()).flatMap(flattenTokens);
+  }
+
+  if (typeof selectedMutationMap === 'object') {
+    return Object.values(selectedMutationMap).flatMap(flattenTokens);
+  }
+
+  return [];
 }
 
-function buildCsvFromRows(rows, selectionLabel) {
+function getWorkbookSequenceByRowNumber(workbookData, rowNumber) {
+  if (!workbookData || !workbookData.sheet || !workbookData.XLSX || !Number.isFinite(Number(rowNumber))) {
+    return '';
+  }
+
+  const key = Number(rowNumber);
+  if (workbookData.sequenceCache && workbookData.sequenceCache.has(key)) {
+    return workbookData.sequenceCache.get(key);
+  }
+
+  const cellAddress = workbookData.XLSX.utils.encode_cell({ r: key - 1, c: 1 });
+  const cell = workbookData.sheet[cellAddress];
+  const value = cell ? String(cell.v ?? '') : '';
+  if (workbookData.sequenceCache) {
+    workbookData.sequenceCache.set(key, value);
+  }
+  return value;
+}
+
+function withRowSequence(workbookData, row) {
+  if (!row) return row;
+  if (row.sequence) return row;
+  return {
+    ...row,
+    sequence: getWorkbookSequenceByRowNumber(workbookData, row.rowNumber)
+  };
+}
+
+function buildCsvFromRows(rows, selectionLabel, workbookData) {
   const header = ['Selection', 'EPI_ID', 'Class', 'Date', 'Substitution Info', 'Substitution Number', 'MonthIndex', 'AllFreq', 'MonthlyFreq', 'Sequence'];
   const lines = [header.join(',')];
 
   rows.forEach((row) => {
+    const sequenceValue = row.sequence || getWorkbookSequenceByRowNumber(workbookData, row.rowNumber);
     lines.push([
       selectionLabel,
       row.epiId,
@@ -809,7 +1040,7 @@ function buildCsvFromRows(rows, selectionLabel) {
       row.monthIndex,
       row.allFreq,
       row.monthlyFreq,
-      row.sequence
+      sequenceValue
     ].map(escapeCsv).join(','));
   });
 
@@ -878,22 +1109,21 @@ function buildSequencePreview(sequence) {
   return formatted.join('\n');
 }
 
-function rowMatchesMutationSelection(row, selectedMutationMap, matchMode) {
-  const selectedTokens = mutationTokensFromSelection(selectedMutationMap);
-  if (!selectedTokens.length) {
+function rowMatchesMutationSelection(row, selectedTokensLower, matchMode) {
+  if (!selectedTokensLower.length) {
     return true;
   }
 
-  const haystack = `${row.substitutionInfo} ${row.sequence} ${row.classLabel}`.toLowerCase();
+  const haystack = `${String(row.substitutionInfo || '').toLowerCase()} ${row.classLabelLower || ''}`;
   if (matchMode === 'all') {
-    return selectedTokens.every((token) => haystack.includes(token.toLowerCase()));
+    return selectedTokensLower.every((token) => haystack.includes(token));
   }
 
-  return selectedTokens.some((token) => haystack.includes(token.toLowerCase()));
+  return selectedTokensLower.some((token) => haystack.includes(token));
 }
 
 function rowMatchesDateRange(row, dateFrom, dateTo) {
-  const rowDate = formatWorkbookDate(row);
+  const rowDate = row.rowDate || formatWorkbookDate(row);
   if (!rowDate) {
     return false;
   }
@@ -908,14 +1138,76 @@ function rowMatchesDateRange(row, dateFrom, dateTo) {
 }
 
 function getWorkbookDateBounds(rows) {
-  const dates = rows.map((row) => formatWorkbookDate(row)).filter(Boolean).sort();
-  if (!dates.length) {
-    return { min: '', max: '' };
+  let minDate = '';
+  let maxDate = '';
+  rows.forEach((row) => {
+    const date = row.rowDate || formatWorkbookDate(row);
+    if (!date) return;
+    if (!minDate || date < minDate) minDate = date;
+    if (!maxDate || date > maxDate) maxDate = date;
+  });
+
+  return { min: minDate, max: maxDate };
+}
+
+function getRowsForVariantFilters(workbookData, classFiltersLower) {
+  if (!workbookData || !workbookData.classBuckets) {
+    return [];
+  }
+
+  const rows = [];
+  workbookData.classBuckets.forEach((bucketRows, classLabelLower) => {
+    const matched = classFiltersLower.some((token) => classLabelLower.includes(token));
+    if (matched) {
+      rows.push(...bucketRows);
+    }
+  });
+
+  return rows;
+}
+
+function yieldToBrowser() {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+}
+
+async function collectMatchesInChunks(rows, matcher, options = {}) {
+  const chunkSize = Number(options.chunkSize) > 0 ? Number(options.chunkSize) : 4000;
+  const maxResults = Number(options.maxResults) > 0 ? Number(options.maxResults) : 20000;
+  const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  const matches = [];
+  let scanned = 0;
+  let truncated = false;
+  const total = rows.length;
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    scanned += 1;
+    if (matcher(row)) {
+      matches.push(row);
+      if (matches.length >= maxResults) {
+        truncated = true;
+        break;
+      }
+    }
+
+    if (scanned % chunkSize === 0) {
+      if (onProgress) {
+        onProgress({ scanned, total, matched: matches.length });
+      }
+      await yieldToBrowser();
+    }
+  }
+
+  if (onProgress) {
+    onProgress({ scanned, total, matched: matches.length });
   }
 
   return {
-    min: dates[0],
-    max: dates[dates.length - 1]
+    rows: matches,
+    scanned,
+    truncated
   };
 }
 
@@ -1307,8 +1599,12 @@ function renderVariantWidget(pageKey) {
       protein: new Set(),
       rna: new Set()
     };
+    let currentWorkbookData = null;
     let currentSearchResults = [];
     let currentSearchHeaders = [];
+    let currentSearchMeta = { truncated: false, scanned: 0 };
+    const RESULTS_PER_PAGE = 1000;
+    let currentResultsPage = 1;
 
     const seqSection = document.createElement('div');
     seqSection.className = 'text-block';
@@ -1345,7 +1641,7 @@ function renderVariantWidget(pageKey) {
       <div class="button-row">
         <button type="button" id="searchButton-${pageKey}">Search</button>
       </div>
-      <p class="sequence-note">Choose a date range, toggle defining RNA/spike mutations, then press Search to preview the first matching Alpha-class sequence from CorrectedData_AfterTimeCorrection.xlsx.</p>
+      <p class="sequence-note">Choose a date range, toggle defining RNA/spike mutations, then press Search to preview the first matching sequence.</p>
     `;
 
     const resultsSection = document.createElement('div');
@@ -1354,6 +1650,11 @@ function renderVariantWidget(pageKey) {
     resultsSection.innerHTML = `
       <h3>Search Results</h3>
       <p class="sequence-note" id="searchSummary-${pageKey}"></p>
+      <div class="button-row" id="paginationRow-${pageKey}" hidden>
+        <button type="button" id="resultsPrev-${pageKey}">Previous</button>
+        <span class="sequence-note" id="resultsPageLabel-${pageKey}">Page 1 of 1</span>
+        <button type="button" id="resultsNext-${pageKey}">Next</button>
+      </div>
       <div id="previewTable-${pageKey}"></div>
       <div class="feature-panel">
         <h4>Sequence Preview</h4>
@@ -1391,7 +1692,7 @@ function renderVariantWidget(pageKey) {
           </div>
         </div>
         <div class="structure-frame structure-frame-fullscreen-default">
-          <iframe id="variant-structure-iframe-${pageKey}" src="" title="RCSB 3D Protein Feature View for ${escapeHtml(data.title)}" allowfullscreen></iframe>
+          <iframe id="variant-structure-iframe-${pageKey}" src="" title="RCSB 3D Protein Feature View for ${escapeHtml(data.title)}" allowfullscreen tabindex="-1"></iframe>
         </div>
         <p class="sequence-note">The embedded RCSB 3D Protein Feature View provides sequence, residue clicking, and linked 3D structure highlighting. Open the <a id="variant-structure-link-${pageKey}" href="#" target="_blank" rel="noopener noreferrer">full-page RCSB view</a> if you want more space.</p>
       </div>
@@ -1414,6 +1715,20 @@ function renderVariantWidget(pageKey) {
     const pdbSelect = structureSection.querySelector(`#pdbSelect-${pageKey}`);
     const variantFrame = structureSection.querySelector(`#variant-structure-iframe-${pageKey}`);
     const variantLink = structureSection.querySelector(`#variant-structure-link-${pageKey}`);
+    let hasPinnedInitialScroll = false;
+
+    const pinInitialScrollTop = () => {
+      if (hasPinnedInitialScroll) return;
+      if (window.location.hash) return;
+      window.scrollTo(0, 0);
+      hasPinnedInitialScroll = true;
+    };
+
+    // Keep variant pages at the top during initial dynamic section injection.
+    requestAnimationFrame(() => {
+      pinInitialScrollTop();
+    });
+
     const loadVariantStructure = (pdbId) => {
       const fullUrl = `https://www.rcsb.org/3d-sequence/${encodeURIComponent(pdbId)}?assemblyId=1`;
       if (variantFrame) {
@@ -1423,6 +1738,16 @@ function renderVariantWidget(pageKey) {
         variantLink.href = fullUrl;
       }
     };
+
+    if (variantFrame) {
+      variantFrame.addEventListener('load', () => {
+        if (document.activeElement === variantFrame) {
+          variantFrame.blur();
+        }
+        // Some browsers jump when the first iframe load completes.
+        pinInitialScrollTop();
+      });
+    }
 
     if (pdbSelect && pdbSelect.value) {
       loadVariantStructure(pdbSelect.value);
@@ -1434,27 +1759,30 @@ function renderVariantWidget(pageKey) {
     const mutationMatchSelect = seqSection.querySelector(`#mutationMatch-${pageKey}`);
     const searchButton = seqSection.querySelector(`#searchButton-${pageKey}`);
     const summaryNote = resultsSection.querySelector(`#searchSummary-${pageKey}`);
+    const paginationRow = resultsSection.querySelector(`#paginationRow-${pageKey}`);
+    const pageLabel = resultsSection.querySelector(`#resultsPageLabel-${pageKey}`);
+    const prevPageButton = resultsSection.querySelector(`#resultsPrev-${pageKey}`);
+    const nextPageButton = resultsSection.querySelector(`#resultsNext-${pageKey}`);
     const previewTableHost = resultsSection.querySelector(`#previewTable-${pageKey}`);
     const sequencePreview = resultsSection.querySelector(`#sequencePreview-${pageKey}`);
     const downloadButtons = Array.from(resultsSection.querySelectorAll('[data-download]'));
 
-    loadCorrectedWorkbookRows().then((workbookData) => {
-      const bounds = getWorkbookDateBounds(workbookData.rows);
-      if (dateFromInput) {
-        dateFromInput.min = bounds.min;
-        dateFromInput.max = bounds.max;
-        if (!dateFromInput.value) {
-          dateFromInput.value = bounds.min;
-        }
+    // Do not parse the large workbook on initial render: keep date picker interactions snappy.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    if (dateFromInput) {
+      dateFromInput.min = '2020-01-01';
+      dateFromInput.max = todayIso;
+      if (!dateFromInput.value) {
+        dateFromInput.value = '2020-01-01';
       }
-      if (dateToInput) {
-        dateToInput.min = bounds.min;
-        dateToInput.max = bounds.max;
-        if (!dateToInput.value) {
-          dateToInput.value = bounds.max;
-        }
+    }
+    if (dateToInput) {
+      dateToInput.min = '2020-01-01';
+      dateToInput.max = todayIso;
+      if (!dateToInput.value) {
+        dateToInput.value = todayIso;
       }
-    }).catch(() => {});
+    }
 
     const updatePillState = () => {
       seqSection.querySelectorAll('[data-mutation-token]').forEach((pill) => {
@@ -1490,9 +1818,37 @@ function renderVariantWidget(pageKey) {
       });
     };
 
-    const renderSearchResults = (rows) => {
+    const updatePaginationControls = (rows) => {
+      const totalPages = Math.max(1, Math.ceil(rows.length / RESULTS_PER_PAGE));
+      if (currentResultsPage > totalPages) {
+        currentResultsPage = totalPages;
+      }
+
+      if (paginationRow) {
+        paginationRow.hidden = rows.length <= RESULTS_PER_PAGE;
+      }
+      if (pageLabel) {
+        pageLabel.textContent = `Page ${currentResultsPage} of ${totalPages}`;
+      }
+      if (prevPageButton) {
+        prevPageButton.disabled = currentResultsPage <= 1;
+      }
+      if (nextPageButton) {
+        nextPageButton.disabled = currentResultsPage >= totalPages;
+      }
+
+      return totalPages;
+    };
+
+    const getPreviewRowForPage = (rows) => {
+      const startIndex = (currentResultsPage - 1) * RESULTS_PER_PAGE;
+      return rows[startIndex] || null;
+    };
+
+    const renderSearchResults = (rows, meta = { truncated: false, scanned: 0 }) => {
       resultsSection.hidden = false;
       if (!rows.length) {
+        if (paginationRow) paginationRow.hidden = true;
         summaryNote.textContent = 'No matching sequences found for the current filters.';
         previewTableHost.innerHTML = '<p class="sequence-note">No preview available.</p>';
         sequencePreview.textContent = 'No sequence available.';
@@ -1500,50 +1856,149 @@ function renderVariantWidget(pageKey) {
         return;
       }
 
-      const firstRow = rows[0];
-      summaryNote.textContent = `${rows.length} matching sequences found. Previewing the first matching entry.`;
-      previewTableHost.innerHTML = buildPreviewTable(currentSearchHeaders, firstRow);
-      sequencePreview.textContent = buildSequencePreview(firstRow.sequence);
+      updatePaginationControls(rows);
+
+      const previewRow = getPreviewRowForPage(rows);
+      const previewRowWithSequence = withRowSequence(currentWorkbookData, previewRow);
+      const startIndex = (currentResultsPage - 1) * RESULTS_PER_PAGE + 1;
+      const endIndex = Math.min(currentResultsPage * RESULTS_PER_PAGE, rows.length);
+      if (meta.truncated) {
+        summaryNote.textContent = `${rows.length} matching sequences found (showing first ${rows.length}; scan paused to avoid browser hang after checking ${meta.scanned} rows). Previewing entry ${startIndex} (page range ${startIndex}-${endIndex}).`;
+      } else {
+        summaryNote.textContent = `${rows.length} matching sequences found. Previewing entry ${startIndex} (page range ${startIndex}-${endIndex}).`;
+      }
+      previewTableHost.innerHTML = buildPreviewTable(currentSearchHeaders, previewRowWithSequence);
+      sequencePreview.textContent = buildSequencePreview(previewRowWithSequence ? previewRowWithSequence.sequence : '');
       setDownloadButtonsEnabled(true);
     };
 
-    const runSearch = async () => {
-      if (searchButton) {
-        searchButton.disabled = true;
-        searchButton.textContent = 'Searching...';
-      }
+    if (prevPageButton) {
+      prevPageButton.addEventListener('click', () => {
+        if (currentResultsPage <= 1) return;
+        currentResultsPage -= 1;
+        renderSearchResults(currentSearchResults, currentSearchMeta);
+      });
+    }
 
+    if (nextPageButton) {
+      nextPageButton.addEventListener('click', () => {
+        const totalPages = Math.max(1, Math.ceil(currentSearchResults.length / RESULTS_PER_PAGE));
+        if (currentResultsPage >= totalPages) return;
+        currentResultsPage += 1;
+        renderSearchResults(currentSearchResults, currentSearchMeta);
+      });
+    }
+
+    const runSearch = async () => {
       try {
-        const workbookData = await loadCorrectedWorkbookRows();
-        currentSearchHeaders = workbookData.headers;
+        updateDebugBadge(`runSearch entered (${pageKey})`);
+        if (searchButton) {
+          searchButton.dataset.searchBusy = 'true';
+          searchButton.disabled = true;
+          searchButton.textContent = 'Searching...';
+        }
+        if (summaryNote) {
+          summaryNote.textContent = 'Search clicked. Preparing...';
+        }
+        resultsSection.hidden = false;
+        if (previewTableHost) {
+          previewTableHost.innerHTML = '<p class="sequence-note">Preparing search...</p>';
+        }
+        if (sequencePreview) {
+          sequencePreview.textContent = 'Search in progress...';
+        }
+        setDownloadButtonsEnabled(false);
+        if (paginationRow) paginationRow.hidden = true;
+
+        if (summaryNote) {
+          summaryNote.textContent = 'Loading workbook data...';
+        }
+        updateDebugBadge('loading workbook');
+        if (dateFromInput) {
+          dateFromInput.min = dateFromInput.min || '2020-01-01';
+        }
+        if (dateToInput) {
+          dateToInput.min = dateToInput.min || '2020-01-01';
+        }
 
         const dateFrom = dateFromInput ? dateFromInput.value : '';
         const dateTo = dateToInput ? dateToInput.value : '';
         const matchMode = mutationMatchSelect ? mutationMatchSelect.value : 'any';
 
-        currentSearchResults = workbookData.rows.filter((row) => {
-          const classLabel = String(row.classLabel || '').toLowerCase();
-          const classMatch = workbookClassFilters.some((token) => classLabel.includes(token));
-          if (!classMatch) {
-            return false;
+        const selectedTokensLower = mutationTokensFromSelection(mutationSelection)
+          .map((token) => normalizeMutationToken(token).toLowerCase())
+          .filter(Boolean);
+
+        let matchResult = null;
+        const searchPayload = {
+          indexPath: getLocalResourcePath('assets/data/CorrectedData_SearchIndex.json.gz'),
+          classFilters: workbookClassFilters,
+          dateFrom,
+          dateTo,
+          selectedTokensLower,
+          matchMode,
+          maxResults: 5000
+        };
+
+        const progressHandler = (progress) => {
+          if (!summaryNote) return;
+          const scanned = Number(progress.scanned || 0);
+          const total = Number(progress.total || 0);
+          const matched = Number(progress.matched || 0);
+          const percent = total > 0 ? Math.min(100, Math.round((scanned / total) * 100)) : 0;
+          summaryNote.textContent = `Searching workbook... ${percent}% (${scanned.toLocaleString()} / ${total.toLocaleString()} rows scanned, ${matched.toLocaleString()} matches)`;
+          updateDebugBadge(`${DETS_WORKER_DISABLED ? 'compat' : 'worker'} ${percent}%`);
+        };
+
+        if (summaryNote) {
+          summaryNote.textContent = 'Searching workbook...';
+        }
+        updateDebugBadge('worker search');
+
+        try {
+          matchResult = await workbookWorkerRequestWithTimeout('search', searchPayload, progressHandler);
+        } catch (error) {
+          if (String(error && error.message ? error.message : '').toLowerCase().includes('timed out')) {
+            DETS_WORKER_DISABLED = true;
+            updateDebugBadge('worker timed out');
+            throw new Error('Workbook search timed out in the worker. The UI stayed responsive, but the search did not complete in time.');
           }
 
-          if (!rowMatchesDateRange(row, dateFrom, dateTo)) {
-            return false;
-          }
+          throw error;
+        }
 
-          return rowMatchesMutationSelection(row, mutationSelection, matchMode);
-        });
+        currentWorkbookData = matchResult.workbookData || null;
+        currentSearchHeaders = matchResult.headers || currentSearchHeaders;
 
-        renderSearchResults(currentSearchResults);
+        const bounds = matchResult.dateBounds || { min: '', max: '' };
+        if (dateFromInput) {
+          dateFromInput.min = bounds.min || dateFromInput.min;
+          dateFromInput.max = bounds.max || dateFromInput.max;
+        }
+        if (dateToInput) {
+          dateToInput.min = bounds.min || dateToInput.min;
+          dateToInput.max = bounds.max || dateToInput.max;
+        }
+
+        currentSearchResults = matchResult.rows;
+        currentSearchMeta = {
+          truncated: matchResult.truncated,
+          scanned: matchResult.scanned
+        };
+        currentResultsPage = 1;
+
+        renderSearchResults(currentSearchResults, currentSearchMeta);
+        updateDebugBadge(`search complete (${currentSearchResults.length})`);
       } catch (error) {
         resultsSection.hidden = false;
         summaryNote.textContent = `Unable to load the workbook: ${error.message}`;
         previewTableHost.innerHTML = '<p class="sequence-note">Workbook search failed.</p>';
         sequencePreview.textContent = 'Workbook search failed.';
         setDownloadButtonsEnabled(false);
+        updateDebugBadge(`search error: ${error.message}`);
       } finally {
         if (searchButton) {
+          searchButton.dataset.searchBusy = 'false';
           searchButton.disabled = false;
           searchButton.textContent = 'Search';
         }
@@ -1551,7 +2006,18 @@ function renderVariantWidget(pageKey) {
     };
 
     if (searchButton) {
-      searchButton.addEventListener('click', runSearch);
+      if (searchButton.dataset.searchBound !== 'true') {
+        searchButton.dataset.searchBound = 'true';
+        searchButton.dataset.searchBusy = 'false';
+        searchButton.__detsRunSearch = runSearch;
+        updateDebugBadge(`search bound (${pageKey})`);
+        searchButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          if (searchButton.dataset.searchBusy === 'true') return;
+          updateDebugBadge(`direct click: ${searchButton.id}`);
+          runSearch();
+        });
+      }
     }
 
     downloadButtons.forEach((button) => {
@@ -1580,13 +2046,13 @@ function renderVariantWidget(pageKey) {
         }
 
         if (button.dataset.download === 'selected-rna') {
-          const csv = buildCsvFromRows(currentSearchResults, 'RNA');
+          const csv = buildCsvFromRows(currentSearchResults, 'RNA', currentWorkbookData);
           downloadText(`${pageKey}-selected-spike-rna.csv`, csv, 'text/csv;charset=utf-8');
           return;
         }
 
         if (button.dataset.download === 'selected-protein') {
-          const csv = buildCsvFromRows(currentSearchResults, 'Protein');
+          const csv = buildCsvFromRows(currentSearchResults, 'Protein', currentWorkbookData);
           downloadText(`${pageKey}-selected-spike-protein.csv`, csv, 'text/csv;charset=utf-8');
           return;
         }
@@ -2374,11 +2840,18 @@ function initTaxonomyCladeHoverHighlight() {
 function initPageWidgets() {
   initCladeNavigationLinks();
   initTaxonomyCladeHoverHighlight();
+  ensureSearchFallbackBinding();
+  updateDebugBadge('initPageWidgets');
 
   const pageKind = document.body.dataset.pageKind;
   const pageKey = document.body.dataset.pageKey;
 
+   if (pageKind === 'variant' && 'scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+
   if (pageKind === 'variant') {
+    updateDebugBadge(`renderVariantWidget start (${pageKey || 'unknown'})`);
     renderVariantWidget(pageKey);
     initVariantCladeFigureHighlight(pageKey);
   } else if (pageKind === 'component' && pageKey !== 'rna') {
