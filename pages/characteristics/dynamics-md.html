@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>DETS | Dynamics MD</title>
+  <title>DETS | Open-close Dynamics (MD)</title>
   <link rel="stylesheet" href="../../css/styles.css">
 </head>
 <body>
@@ -14,14 +14,41 @@
 <div id="main_container">
   <div class="container">
     <div class="page-header">
-      <h1>Dynamics MD</h1>
-      <p>Placeholder subpage for molecular-dynamics and conformational dynamics notes.</p>
+      <h1>Open-close dynamics (MD)</h1>
     </div>
 
-    <div class="text-block">
-      <h2>Coming Soon</h2>
-      <p>Use this page for MD trajectories, conformational clustering, and residue interaction summaries.</p>
+    <div class="text-block section-gap">
+      <h2>Overview</h2>
+      <p>This section summarizes the presentation <em>Evolutionary Aspect of Spike Glycoprotein's Conformational Dynamics</em>. The central idea is that spike open-close dynamics are not a passive consequence of mutation, but an independently tunable trait that is continuously optimized during viral evolution.</p>
+      <p>Beyond sequence substitutions alone, the work emphasizes coupled regulation between amino-acid mutations and glycan motion, especially around the receptor-binding domain (RBD). This coupling reshapes the conformational landscape that controls accessibility, receptor interaction, and downstream fitness.</p>
     </div>
+
+    <div class="text-block section-gap">
+      <h2>Mechanistic Focus</h2>
+      <p>The presentation highlights glycan-assisted gating behavior in open-close transitions, with specific attention to glycans around N165, N234, and N343 and their role in stabilizing or biasing conformational states.</p>
+      <p>Single mutations and mutation combinations are discussed as dynamic modulators rather than only static structural edits. The key question is how variant-specific mutations synergize with glycan dynamics to shift free-energy preferences between closed, intermediate, and open states.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>Computational Strategy</h2>
+      <p>The workflow integrates all-atom molecular dynamics, metadynamics, and free-energy calculations, using geometric descriptors (for example angle and dihedral coordinates) to quantify conformational motion.</p>
+      <p>Comparative analyses are shown across major evolutionary stages (WT, Alpha, Delta, Omicron lineages), with mutation-level decomposition to identify how specific substitutions contribute to observed dynamic shifts.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>Key Findings</h2>
+      <p>Open-close behavior evolves across variants in a non-uniform way, supporting the view that conformational dynamics are under selection. Mutation-glycan interactions are repeatedly implicated as a mechanism for landscape reshaping.</p>
+      <p>Examples in the deck point to mutation-dependent changes in glycan coupling and receptor-related behavior, including discussions around N501Y, L452R, E484A, Q493R, and lineage-dependent context effects (including BA.2/BA.4-5/JN.1-related comparisons).</p>
+      <p>Taken together, the results motivate interpreting spike evolution through dynamic free-energy landscapes, not only static sequence or structure snapshots.</p>
+    </div>
+
+    <div class="footnote-block">
+      <h4>Source</h4>
+      <ul>
+        <li>[1] Xu, W. Evolutionary Aspect of Spike Glycoprotein's Conformational Dynamics.</li>
+      </ul>
+    </div>
+
   </div>
 </div>
 

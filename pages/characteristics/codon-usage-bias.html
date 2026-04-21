@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>DETS | Codon Usage Bias</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+</head>
+<body>
+
+<div id="header-placeholder"></div>
+<div id="navigator-placeholder"></div>
+
+<div id="main_container">
+  <div class="container">
+    <div class="page-header">
+      <h1>Codon Usage Bias</h1>
+      <p>Codon usage bias is observed across all amino acids in the SARS-CoV-2 spike protein. The figures below summarize the full-domain pattern and the domain-specific fingerprints for NTD, RBD, CTD, and S2.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Overview</h2>
+      <p>Codon usage bias is observed across all amino acids. In general, U is preferred among 4-fold degenerate codons, followed by A except for Val. U and A are preferred over C and G respectively among 2-fold degenerate codons. Similar U,A bias is observed for the 6-fold degenerate Leu and Ser, while Arg prefers A over U exclusively.</p>
+      <div class="viz-placeholder" style="display: grid; gap: 1rem; margin-top: 1rem;">
+        <img src="../../assets/images/Codon%20Usage%20for%20Website/Original-CodonUsage.jpg" alt="Original codon usage overview" style="width: 100%; height: auto; display: block;">
+        <img src="../../assets/images/Codon%20Usage%20for%20Website/20250917-2-Original-Reg-CodonUsage.jpg" alt="Original codon usage detailed overview" style="width: 100%; height: auto; display: block;">
+      </div>
+      <p style="margin-top:8px;font-size:0.9em;color:#666;">The paired overview highlights codon usage across the full spike sequence. U and A dominate the preferred codon choices across most amino-acid classes, with domain-specific deviations summarized in the sections below.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>NTD</h2>
+      <p>Compared to the full range, U-preference in 2-fold and 4-fold degenerate codons slightly increases. A-preference in Glu and Gln also increases. Arg is more prone to use AGA and AGG than CGN codons.</p>
+      <div class="viz-placeholder" style="margin-top: 1rem;">
+        <img src="../../assets/images/Codon%20Usage%20for%20Website/Original-NTD-CodonUsage.jpg" alt="NTD codon usage" style="width: 100%; height: auto; display: block;">
+      </div>
+      <p style="margin-top:8px;font-size:0.9em;color:#666;">The NTD fingerprint shows a stronger preference for U- and A-ending codons in 2-fold and 4-fold degenerate sites, with increased A usage in Glu and Gln and selective use of AGA/AGG for Arg.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>RBD</h2>
+      <p>U-preference is more prominent across 2-fold degenerate codons, notably His, Asp and Phe. A similar trend is observed in 4-fold degenerate Pro and Tyr. Arg selectively uses AGA and AGG with A preferred but not CGN codons. Met seldomly appears in RBD.</p>
+      <div class="viz-placeholder" style="margin-top: 1rem;">
+        <img src="../../assets/images/Codon%20Usage%20for%20Website/Original-RBD-CodonUsage.jpg" alt="RBD codon usage" style="width: 100%; height: auto; display: block;">
+      </div>
+      <p style="margin-top:8px;font-size:0.9em;color:#666;">The RBD displays a stronger U bias in 2-fold codons and a similar trend in 4-fold codons. Arg remains preferentially encoded by AGA and AGG, while Met is comparatively rare in this domain.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>CTD</h2>
+      <p>UC and AG bias are less prominent in 2-fold degenerate codons except His, and in Asn the UC bias is reversed; U remains preferred among 4-fold degenerate codons, and codons are more selectively used in 6-fold degenerate codons.</p>
+      <div class="viz-placeholder" style="margin-top: 1rem;">
+        <img src="../../assets/images/Codon%20Usage%20for%20Website/Original-CTD-CodonUsage.jpg" alt="CTD codon usage" style="width: 100%; height: auto; display: block;">
+      </div>
+      <p style="margin-top:8px;font-size:0.9em;color:#666;">The CTD pattern shows weaker UC and AG bias in 2-fold codons, except for His. U remains preferred among 4-fold degenerate codons, and 6-fold codon choices appear more selective.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>S2</h2>
+      <p>The codon usage fingerprint in S2 highly resembles that of the full range. Notably, the U-A bias is reversed in Pro and Tyr.</p>
+      <div class="viz-placeholder" style="margin-top: 1rem;">
+        <img src="../../assets/images/Codon%20Usage%20for%20Website/Original-S2-CodonUsage.jpg" alt="S2 codon usage" style="width: 100%; height: auto; display: block;">
+      </div>
+      <p style="margin-top:8px;font-size:0.9em;color:#666;">The S2 profile closely follows the full spike codon-usage signature, but Pro and Tyr show a reversed U-A bias relative to the global trend.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>Contributors</h2>
+      <p>This work was contributed by:</p>
+      <ul style="columns: 1; column-gap: 2em; list-style-position: inside;">
+        <li>Chi Ming Kan</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="../../js/load-components.js"></script>
+</body>
+</html>

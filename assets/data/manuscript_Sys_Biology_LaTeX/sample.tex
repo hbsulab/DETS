@@ -1,0 +1,272 @@
+%Version 1.0 August 2024
+%Version 1.1 October 2024
+% See section 11 of the User Manual for version history
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                                 %%
+%% Please do not use \input{...} to include other tex files.       %%
+%% Submit your LaTeX manuscript as one .tex document.              %%
+%%                                                                 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass{sysbio}% For Regular Manuscripts
+%\documentclass[POV]{sysbio}% POC option is meant for ``Points of View''
+%\documentclass[SSE]{sysbio}% SSE option is meant for ``Software for Systematics and Evolution''
+% Add history information for the article if required
+%\history{Received Month X, 20XX;
+%revised Month X, 20XX}
+\usepackage{bm}
+\usepackage{lipsum}
+\usepackage{hyperref}
+\raggedbottom
+\renewcommand{\figurename}{Figure}
+\renewcommand\theequation{\arabic{equation}}
+
+\begin{document}
+\title{Unraveling the Complex Evolution of Epistasis in SARS-CoV-2's Spike Glycoprotein}
+% Each important word in the title should begin with a capital letter
+
+% List of authors, with corresponding author marked by asterisk
+\author[1]{Mengqi JIA}
+\author[1]{Kaicheng ZHU}
+\author[1]{Shihong CHEN}
+\author[1,2,\ast]{Haibin SU}
+
+% Author addresses
+\address[1]{Department of Chemistry, the Hong Kong University of Science and Technology, Hong Kong}
+%\address[2]{Chemistry Department, Hong Kong University of Science and Technology.}
+%\address[3]{Chemistry Department, Hong Kong University of Science and Technology.}
+\address[2]{IAS Center for AI for Scientific Discoveries, the Hong Kong University of Science and Technology, Hong Kong}
+\address[3]{AI-X Open Lab., HKUST Shenzhen Hong Kong Collaborative Innovation Research Institute, China}
+
+% E-mail address for correspondence
+\corresp[*]{Email: \email{haibinsu@ust.hk} (H.B.S.)}
+% Identify the name, address, telephone/fax numbers, and e-mail address for the author who will receive proofs and be designated the "corresponding author" in text.
+
+% Running headers of paper:
+\markboth%
+% First field is the short list of authors
+{}
+% Second field is the short title of the paper
+{Running head}
+% This should be shortened version of the title and no greater than 50 characters
+
+\abstract{The spike protein is fundamental to the pathogenesis of SARS-CoV-2 and remains the main target of COVID-19 vaccines, as it protrudes from the viral envelope to infect host cells. Mutations in the spike protein can lead to the emergence of new variants with increased transmissibility and immune escape. Despite the tremendous studies on the spike protein over the past years, the coevolution of non-adjacent residues is not well understood. Delving into the time-resolved evolutionary trajectories of over 15 million spike-protein sequences, we analyze the coevolution of non-local residue pairs with a Punctuated Tensor Decomposed Pair Clustering Method (PunTeD PCM). Characteristic co-mutations form connected networks that involve residues across different domains. The coevolution of amino acids exhibits a punctuated behavior, in concert with the emergence of significant SARS-CoV-2 variants. The adaptive coevolutionary landscapes in the sequence space shed light on the correlation between the epistatic mutations and viral fitness.}
+
+\keywords{SARS-CoV-2, spike protein, epistasis, punctuated evolution, evolutionary dynamics}
+
+\maketitle
+
+\section{Introduction}
+
+
+Severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) has been posing a significant threat to public health since December 2019  (\cite{SARS-CoV-2-outbreak,new_coronavirus}). The emerging new variants of SARS-CoV-2 characterized by various genetic mutations, particularly variants of concern (VOCs) such as Alpha, Delta, and Omicron, have increased transmissibility and immune escape, placing a primary challenge for vaccine design and other medical treatments  (\cite{alpha_mu,delta_neuta,omi_alert,antibody,antibody2,small_molecu_d,small_molecu_d_2,vaccine,vaccine2}). Within the whole viral genome, the mutations in the spike protein are pivotal, because the spike protein interacts with the human angiotensin-converting enzyme 2 (ACE2) receptor and mediates membrane fusion (\cite{spike_entry_fav,spike_entry2,spike_entry}). 
+It serves as the primary antigenic component that triggers the host immune response and induces neutralizing antibodies (nAbs) (\cite{spike_imp,spike_primary_tar,spike_imp,spike_antigencity}). Therefore, the amino-acid mutations in the spike-protein sequence would alter the antigenicity and infectivity of SARS-CoV-2 and enhance its viral fitness under positive selections  (\cite{sars_variant,DMS_antibody,DMS_binding_affinity,JianLu2023MBE}).
+
+The non-local epistatic interactions between amino acids are important in determining the structure, function, and evolution of proteins (\cite{eptasis_overall,sca}). They affect the evolution of protein sequences by allowing simultaneous mutations and provide collective contributions to viral fitness (\cite{DMS_binding_affinity,pingzhi,epistasis_lower_b}). Epistatic co-mutations can exhibit diverse biological activities under different mutational backgrounds, where some neutral mutations may be considered beneficial due to the underlying interactions between amino acids (\cite{epistasis_compensatory,epistasis_g}). This complex cooperation among amino-acid mutations is crucial in shaping the evolution trajectories of the spike protein and accelerating virus evolution (\cite{constrain,viral_evo_constrain,bak1993punctuated,bak1989self}). 
+%This cooperative evolution is considered much faster than the non-coupling scenarios, where the evolution trajectories are shaped by the complex interactions among amino acids.
+Some renowned statistical methods, such as statistical-coupling analysis and direct-coupling analysis, were applied to infer long-range coupling between amino acids in different protein domains (\cite{sca,dca}). However, they did not characterize the time-resolved trajectories of amino-acid coevolution in viral proteins, as these previous methods were formulated based on statistical distributions at thermodynamic equilibrium. Understanding the cooperative interactions between amino-acid mutations is crucial in characterizing the fitness landscape, where a real-time tracking of this coevolution is essential to unveil the underlying evolutionary dynamics of the SARS-CoV-2 (\cite{pingzhi}). 
+
+In this work, we present a Punctuated Tensor Decomposed Pair Clustering Method (PunTeD PCM) to investigate the cooperative evolution of the SARS-CoV-2 spike protein at the amino-acid level. The Hilbert spectrum is utilized to provide a quantitative characterization of the collective evolutionary dynamics across different time scales (\cite{huang2014hilbert}). Our analysis reveals a punctuated evolutionary behavior, where relatively stable evolution is intermittently disrupted by intense selection pressure and active amino-acid cooperation (\cite{bak1993punctuated,JianLu2023MBE}). The characteristic frequency is identified at each month to indicate the temporal cooperation cooperation between amino-acid mutations. Significant mutations are outlined as exhibiting intensive cooperation in the temporal domain and sequence space. Furthermore, comprehensive coevolutionary landscapes are constructed to elucidate the detailed dynamics at various stages of the COVID-19 pandemic. Massive spike sequences are embedded in decomposed sequence spaces with the PunTeD PCM, and the adaptability of each sequence is assessed by the adaptive coevolution strength (ACS). Thus, PunTeD PCM provides a robust framework for investigating and monitoring the evolutionary dynamics of viral proteins, thereby enhancing our real-time response capability to viral mutations. 
+
+\section{Methods}\label{sec1}
+
+\textbf{Data preparation}
+
+Over 15 million SARS-CoV-2 spike sequences were downloaded from the GISAID database  (\cite{gisaid}). Redundant sequences were removed, and unique sequences were retained for further analysis. A total number of 667,213 unique spike amino-acid sequences were extracted from the complete dataset between January 2020 and February 2024.  The first reported sequence, $EPI\_ISL\_402124$, was designated as the reference sequence for this analysis  (\cite{msa,SARS-CoV-2-outbreak}). Subsequently, sequences were clustered into monthly-indexed groups according to the submission time. For each group, multiple sequence alignment (MSA) was conducted to identify the presence of substitutions and deletions for each amino-acid residue using Clustal Omega.
+
+
+%For each month, amino acids were ranked in descending order based on their mutation frequency at each residue. Then, the distribution of amino acid polymorphisms was examined, yielding the total amino acid polymorphisms $s_j (t)$ for each $j_{th}$ residue and the skewness $k_j (t)$ of each amino acid distribution for each month. 
+For the month indexed by $t$, a $m\times l \times a$ mutation tensor $\bm{H}(t)$ was constructed, where $m$ denotes the number of unique sequences collected. $l$ represents the length of spike sequence (1273), and $a$ is the number of amino-acid types (21). Amino acids were arranged according to their side chains’$pK_a$ value, and deletions were treated as a special amino acid type (\cite{pka}). In this work, if a mutation to the $k^{th}$-type amino acid was detected at the $j^{th}$ residue in sequence $i$, the corresponding tensor component $\bm{H}_{i,j,k}(t)$ would be assigned a value of 1. If no mutation was detected, the component would be set to 0.
+
+Furthermore, a pair-coupling matrix $\bm{C}(t)$ was constructed for each month with the collected data (\cite{statistic}:
+\begin{equation}
+    \bm{C}(t)^{(i_a,j_a)}=f_{ij}^{ab}(t)-f_i^a(t) f_j^b(t)
+\end{equation}
+where $\bm{C}(t)^{(i_a,j_a)}$ denotes the pair coupling strength between the residue i and j at the $t_{th}$ month. $f_{ij}^{ab} (t)$ represents the frequency of simultaneously observing an amino acid of type a at residue $i$ and another amino acid of type b at residue $j$ during month $t$. Meanwhile, $f_{i}^{a}(t)$  indicates the independent frequency of observing amino acid $a$ at the residue $i$ at the $t^{th}$ month.
+
+
+\vspace{1.0em}
+
+\textbf{Collective synchronization of coevolution pairs}
+
+Coevolution mutational series $\hat{\bm{C}}(t)^{(i_a,j_b)}$ were constructed base on the monthly computed coupling strength  by tracking the evolution of covariance from previous months  (\cite{linear_al}). Hilbert-Huang decomposition were then applied to extract the temporal features of coevolution modes that characterize evolution across different time scales (\cite{huang2014hilbert}:
+\begin{equation}
+    \hat{\bm{C}}(t)^{(i_a,j_b)}=\sum_m \hat{c}_{i_a,j_b}^m (t) e^{i\theta_m(t)}
+\label{eq:hilbet}
+\end{equation}
+$\hat{c}_{i_a,j_b}^m (t) $ and $\theta_m(t)$ represent the instance amplitude and frequency respectively. %The mutation features of one epistasis pair $i$,$j$ then can be characterized by a marginal frequency at the $t_{th}$ month $\{\theta_0,\theta_1 ..\theta_m \}$. 
+With equation. (\ref{eq:hilbet}), the temporal features of each coevolution pair across different time scales can be explicitly characterized by the instantaneous frequencies derived from the Hilbert spectrum, denoted as $\hat{\bm{C}}(t)^{(i_a,j_b)}: \{\theta_1,\theta_2 ...\theta_m\}$. 
+For each month $t$, the temporal features of top pairs were collected. Additionally, the monthly-dependent collective synchronization was assessed using the frequency density function with gaussian kernel density estimation. 
+
+\vspace{1.0em}
+
+\textbf{Composite matrix}
+
+With the characterization of single amino acid mutations and epistasis correlation, a composite metric $L(t)^{(i_a)}$ was proposed to quantify the mutation strength of amino acid mutation in our previous work (\cite{dynamic_exp}:
+\begin{equation}
+    L(t)^{i_a} = M(t)^{i_a} \sum_{j,b} C(t)^{(i_a,j_b)} M(t)^{(j_b)}
+\end{equation}
+where $M(t)^{i_a}$ refers to the single amino acid selectivity of the mutation $i_a$ provided by tensor decomposition. $C(t)^{i_a,j_b}$ represents the coupling strength between $i_a$ and $j_b$. Pairs with higher $L(t)^{i_a}$ values were selected and their temporal collaboration was then evaluated through the collective synchronization. An adaptive frequency range of 3 Gaussian bandwidths was introduced as a constraint to leverage leading pairs that have been intensively cooperated both in temporal and sequence space. 
+
+\vspace{1.0em}
+
+
+\textbf{Adaptive coevolutionary landscape}
+
+One comprehensive mutation tensor $H^a$ was constructed with a dimension $m\times l\times a$ by appending all the monthly-constructed mutation tensors. This tensor encompasses the information from all 667,213 unique sequences collected between December 2019 and February 2024. In this scenario, m  represents the total number of unique sequences (667,213) collected from December 2019 to January 2024.
+
+We subsequently factorized the comprehensive mutation tensor $H^a$ with Tucker decomposition (\cite{tucker}), 
+\begin{equation}\label{lad:eq:decom}
+    H^a={\sum}^a \times_1 P^a \times_2 N^a \times_3 A^a
+\end{equation}
+where $P^a$, $N^a$ and $A^a$ are are matrices of dimensions m×m, $l×l$ and a×a separately that contain the eigenvector information of sequence space, residue space and amino acid space. The contribution of each eigenvectors are recorded through eigenvalues at ${\sum}
+^a$. Top eigenvectors derived from the factorized sequence matrix $P^a$ were then employed to construct the sequence coordinate ($\xi=\sum_i \sigma_i p_i$) of the Spike coevolutionary landscapes.%that characterizes the evolutionary coordinate of each spike sequence.
+
+Here we reduced the sequence space to two dimensions, where each sequence was mapped as a point in the landscape, and one ACS was defined in quantifying the adaptability of each sequence as follow: 
+\begin{equation}\label{lad:eq:fittness}
+    F^a (seq)= 1/Z \sum \sum_{i,j}K^i*K^j*C^{i,j}
+\end{equation}
+$K^j=s^j*f(k^j)$ denotes the activity of single amino acids mutations, where $s^j$ represents the single amino acid polymorphism (SAP) and $k^j$ signifies the selectivity imposed on that residue. $f(x)=(1/(1+exp(-x)))$ serves as an activation function designed to avoid the overwhelming of the selectivity. $C^{i,j}$ quantifies the pair-coupling strength between mutations observed within that sequence. Z is the normalization factor. Multivariate Gaussian distributions were utilized to further smoothen the coevolutionary landscape. Additionally, coevolutionary landscapes that characterize the detailed evolutionary trajectories of VOCs and post-Omicron lineages was constructed with the unique sequences collected from January 2020 to Sept 2021 and Omicron lineages respectively.
+
+\section{Results}\label{result}
+
+\subsection{Time-Resolved Epistasis Networks of the Spike Protein}  
+
+Characterizing the time-resolved cooperation of amino acid mutations is essential in depicting the adaptive landscape of the virus. Based on the time-dependent covariance tensor of spike-protein mutations, we find that the epistasic interactions varied with time (Fig. \ref{cov}). A covariance strength threshold of 0.001 was applied. 
+Throughout the COVID-19 pandemic, from the early stage before the emergence of VOCs to the late stage after the emergence of Omicron variants, the epistasis networks evolved while long-range epistatic interactions linked residues across different domains in the spike protein. The fraction of sequences exhibiting a mutation at each residue was examined in conjunction with their respective epistatic correlations across the spike protein sequence. As shown in Figure. \ref{cov}, residues with higher mutation fraction are more likely to interact with other residues, especially in N-terminal domain (NTD) and receptor binding domain (RBD). During the early stage of the pandemic, mutations tended to randomly emerge and were correlated with their neighborhood, as shown by the chord diagram at 2020-08. With the emergence of Alpha (B.1.1.7) in Nov 2020, inter-domain residue correlation increased, and the average covariance strength doubled. As the virus evolves, the correlations between residues exhibited a dramatic increase, as depicted in the April 2021 chord diagram, resulting in a coupling strength approximately tenfold stronger than that observed in November 2020. Since the winter of 2021, the average correlation strength doubled with the prevalence of Omicron, and the coupling network exhibited a convergent pattern, suggesting that a limited number of mutations with high selectivity are favored. Particularly with the emergence of JN.1 in autumn 2023, new mutations demonstrates a strong preference to attach to these specific mutations (\cite{compliciyt_rate,epistasis_g}).
+
+The structural feature of these interaction networks is illustrated by their degree distributions as shown below the chord diagrams, which adhere to Yule-Simon distributions (\cite{yulesimon}). This result suggests a preferential attachment mechanism of mutations. New mutations are more likely to connect to evolutionary significant mutations that possess a higher fitness (\cite{yule,yulesimon}). 
+
+Several important mutations with high connectivity are noticed within the tail region and outside the fitted Yule-Simon distribution as denoted by red dots. Soon after the emergence of SARS-CoV-2, one highly transmissible mutation D614G was noticed with more than 300 connections. The mutation D614G has been reported to further stabilize the '630 loop' and facilitate the opening of the RBD, conferring the significant selective advantage and lowering the mutational barrier of other residues (\cite{614}). As shown in Figure. \ref{cov}a, new mutations preferred to occur in the D614G background, resulting in a larger connectivity of this prevalent mutation (\cite{compliciyt_rate}). As it appeared in nearly all the unique sequences collected, the mutation D614G is considered a background mutation in further analysis.
+
+RBD N501Y was observed in the tail region connecting with around 200 mutations in 2020-11. N501Y is believed to enhance the binding affinity of the viral spike receptor-binding domain to the human ACE2 receptor (\cite{N501Y_enhance_trans, N501Y_lineage, N501Y_binding}). With the dominance of the Alpha variant, amino acid mutations associated with the Alpha variant are observed shifting towards the tail region of the degree distribution. In April 2020, one RBD mutation L452R is identified at the tail region in addition to the Alpha mutations, coinciding with its prevalence during the Spring of 2021. Lineages carrying L452R exhibited higher entry efficiency and significantly enhanced immune escape against convalescent plasma and monoclonal antibodies (mAbs), leading to a global expansion of new lineages (\cite{L452R_expansion,motozono2021sars_452}). %Mutation L452R has been extensively studied due to its significant selective advantages, including increased spike binding affinity, viral fusogenicity, and viral infectivity (\cite{motozono2021sars_452,L452R_expansion} 
+
+With the emergence of Omicron, the T95I mutation was observed driving the mutations of multiple residues with more than 100 connections. Mutation T95I was reported to potentially induce topological changes in the NTD neutralization 'supersite' and facilitate antibody escape (\cite{95}). In 2022-02, one critical mutation S371F was noticed with high connectivity, which was reported to abolish most of the RBD-directed mAbs (\cite{371_L/Fai2022antibody}). Mutation N440K, on the other hand, was related to the enhancement of the binding affinity between receptor-binding motif and ACE2 receptor (\cite{440_str}). Meanwhile, mutations L455F/S and F456L, reported in variants such as Hk.3, JN.1, and KP.2, were also highlighted in 2023-10 with aournd 200 connections (\cite{kpkp3,31d}). %\cite{455}
+Residues situated at the tail region are characterized by unequivocally superior connectivity, which directly confers on them the capacity to influence a more extensive network of other residues, thereby establishing their pivotal role in shaping the evolutionary trajectory of the virus. 
+
+The evolution of $\rho$ that controls the tail behavior of the distribution is tracked and demonstrated in Figure. \ref{cov}b. Larger values of $\rho$ reflect a lighter tail and a more diffuse network architecture, whereas smaller value of $\rho$  reflect a heavier tail and the presence of highly connected mutations. The relatively high $\rho$ soon after the outbreak of the SARS-CoV-2 corresponds to the random mutation of the virus at the early stage of the pandemic, and a decline in $\rho$ is observed with the emergence of the highly selective point mutation D614G (\cite{614,6141,6142}). A significant drop in the fitting parameter $\rho$ has been observed from the original lineage to the very first VOC Alpha, suggesting the increment of interactions among predominant mutations. A slight raise of $\rho$ is observed with the emergence of Alpha and Delta as denoted at Figure. \ref{cov}b. An unexpected increase in $\rho$ is observed prior to the emergence of the Omicron variant, followed by a drop after Omicron appeared. A similar rise in $\rho$ is observed with the emergence of the Omicron subvariants BA.4/5, and JN.1. This preference over predominant mutations prior to the new variants might suggest the underlying evolution mechanism of emerging variants, where significant mutations emerged from random sampling and the intensive cooperation between these amino acid mutations further determined the formation of emerging variants. In general, $\rho$ shows a decreasing trend alongside a broader range of significant mutations as the virus evolved. From the original lineage to Omicron, the virus tended to exhibit a more compact interaction network with a denser connectivity, as shown in Figure. \ref{cov}c.
+
+\begin{figure*}[!http]
+\includegraphics[width=0.95\linewidth]{Figure/figure1_note_bs.png}% Here is how to import EPS art
+\caption{Evolution of amino-acid epistasis networks of the SARS-CoV-2 spike protein. a) Chord diagrams illustrate the dynamic coevolution of the amino-acid residues in the spike protein. The inner regions display the correlations between amino acid mutations, where mutations in NTD, RBD, CTD, and S2 are respectively denoted in blue, coral, green, and pink. The outer regions show the mutation fractions for each residue. The time-dependent degree distributions of the correlation networks are presented below the corresponding chord diagrams, and the fitted Yule-Simon probability mass functions (PMF) are denoted by the red solid lines. Key RBD mutations are highlighted by red dots. b) Monthly-dependent evolution of the fitted Yule-Simon parameter $\rho$. c) Fitted Yule-Simon distributions for representative viral variants. The original, Alpha, Delta, and Omicron variants are respectively shown in gray, orange, red, and purple.}
+\label{cov}
+\end{figure*}   
+
+\subsection{Punctuated Evolution of the Spike Protein}
+The evolution of interacting biosystems has been conjectured to exhibit the punctuated behavior, where the relatively stable fluctuations of the system are consistently punctuated by a series of intermittent mutational bursts (\cite{bak1993punctuated,bak1989self}). We employ the collective Hilbert frequency as a quantitative measurement to characterize the temporal feature of the evolution of the spike protein(\cite{huang2014hilbert}). %In this paper, the collective Hilbert frequency is utilized to characterize the pattern of the cooperative evolution of the SARS-CoV-2 spike protein. 
+As shown in Figure. \ref{punct}a, a consistent collective synchronization frequency has been observed for each month, indicating the strong collaboration among amino acids during viral evolution. The frequency variations suggest a continuous refinement of the epistatic network. Tracking this collective frequency over time (Fig. \ref{punct}b) revealed a punctuated dynamic of the spike evolution, where the relatively stable exploration of the spike is consistently punctuated by sudden shifts in the frequency associated with significant sequence deviations with the emergence of new variants. %An adaptive frequency range encompassing leading %20$\%$ of the coevolution pairs is set for each month, as represented as bars in Figure. \ref{punct}b.
+
+A thorough examination of the synchronized pairs within the adaptive frequency range can reveal the detailed punctuated variations. For each month, coevolution pairs that fall within the designated synchronized adaptive frequency range are extracted and illustrated in Figure. \ref{punct}c, colored corresponding to lineages. Detailed mutation information for each cluster is provided in the SI. Critical mutations driving this punctuated evolution are highlighted, with their positions mapped in Figure. \ref{punct}d.
+
+%we extract coevolution pairs that fall within the designated synchronized adaptive frequency range. Clusters exhibiting distinct punctuated equilibrium states are illustrated in FIG. \ref{punct}).(c), colored corresponding to lineages. 
+%These substantial alterations in sequence space lead to the observed shift of the collective synchronization frequency. 
+
+At the early stage of the pandemic, mutations tended to emerge randomly and only small clusters were detected in the sequence space. As the virus evolved, the collective synchronization frequency experienced a notable shift coinciding with the emergence of new variants such as Alpha and Beta. The global circulation of the Alpha lineage made the major contribution to the “punctuated state” during this period. A detailed analysis of synchronized pairs reveals the mutation N501Y at that time, shared by both Alpha and Beta lineage. The acquisition of mutation N501Y may lower the genetic barrier and promote new spike mutations, and the intensive collaboration between these amino acid mutations further facilitates the emergence of new variants such as Alpha and Beta (\cite{484-501,epistasis_compensatory}). 
+
+%Together with the composite matrix, the collective synchronization frequency can act as an external constraint to identify evolutionary significant mutations that lead the evolution of the virus. These outlined mutations not only show a strong temporal cooperation but also interact intensively in the sequence space. From August 2022, recurrent deletion regions (RDRs) RDR1 $\Delta$69/70 and RDR2 $\Delta$144-144 are highlighted (\cite{rdr}). Meanwhile, mutations N501Y are noticed in the following month prior to the emergence of Alpha and Beta. 
+
+%, thereby conferring fitness advantages and lower the barrier for the emergence of novel variants.
+%Furthermore, an increment of the coevolving complexity is noted with the emergence of other VOCs, such as Gamma and Lambda, as illustrated at Figure \ref{pun_ev:fig:pun_ev}).(c). The co-circulation of these VOCs might contribute to the larger variation and the slight shift towards lower frequency around 2020-02. 
+
+The advent of the Delta brings about a notable shift in the collective synchronization frequency, where the Delta cluster is revealed by the relative difference of the adaptive frequency range between Delta and Lambda. Notably, the L452R mutation emerged as a central component of the coevolution network, driving the emergence of both Lambda and Delta variants.
+With a significant fitness advantage (\cite{delta_fh,delta_trans}), the Delta variant quickly replaced Alpha and became the predominant variant in summer 2021, dominating the “punctuated equilibrium” state observed between 2021-04 and 2021-07. 
+
+This synchronization frequency exhibits remarkable fluctuation prior to the emergence of Omicron and then becomes stabilized with the appearance of Omicron BA.1. The mutation pattern of the virus has been dramatically changed by the Omicron, in contrast to the previous VOCs as illustrated at Figure. \ref{punct}c.
+
+After the prevalence of BA.1, BA.2 and BA.4/5 emerged with distinct antigenic profiles compared to BA.1  (\cite{vitro_BA245,ba45212_escape}), causing a notable deviations of the synchronization frequency. In the beginning of 2022, Omicron BA.2 quickly replaced BA.1 and became the most dominant variant (\cite{ba2}), where the emergence of BA.2 clusters was observed with the synchronized pairs as shown in Figure. \ref{punct}c. Residue S371 is noticed significant with the emergence of mutation S371L and S371F in Omicron BA.1 and BA.2 respectively. Although both S371F and S371L mutations have been reported to broadly affect most RBD-directed mAbs, S371F has a greater negative impact (\cite{371_dejnirattisai2022sars,371_L/Fai2022antibody}).
+
+The synchronization frequency tends to converge with the spreading of BA.4/5, suggesting a more localized exploration of the Omicron sublineages. 
+During this stage, the virus tended to find the local best fit as illustrated by the pink area in Figure. \ref{punct}c, rather than acquire significant variations. Additionally, three mutations, L455S, F456L, and F486P, have been identified as important drivers in the emergence of JN.1 and its descendants (\cite{JN1evolution,kpkp3}). They are reported to synergistically increase spike's binding affinity to ACE2 and enhance antibody evasion (\cite{dmsforomi,455,jn1456}).
+
+The collective synchronization frequency demonstrates itself as sensitive tool in detecting the variation of spike protein. Together with the composite matrix, the collective synchronization frequency can act as an external constraint to identify significant mutations that lead the evolution of the virus. 
+
+Soon after the emergence of SARS-CoV-2, mutation D614G emerged with high selection advantage (\cite{614,6141}). From August 2022, recurrent deletion regions (RDRs) RDR1 $\Delta$69/70 and RDR2 $\Delta$144-144 are highlighted (\cite{rdr}). Meanwhile, mutations N501Y and S477N are outlined in the following month prior to the emergence of Alpha. CTDs and S2 mutations A570D, T716I, P681H, and S982A are identified showing up together clustering with N501Y in September 2020 (\cite{alpha_mu}). Notably, the mutation L452R is outlined with a strong signal starting in the winter of 2020. In December 2020, mutations T19R, T95I, T478K, P681R, D950N are observed coupling with L452R and $\Delta$241-243 (\cite{95_saunders2022fusogenicity,478484}). Meanwhile, L18F is recognized as a pivotal node driving the rise of the gamma variant (\cite{215_18,681R,delta_neuta}). Also, several Lambda and Kappa mutations were outlined alongside L452R. 
+
+Prior to the emergence of Omicron BA.1, mutations R346K, N440K, G446S, N764K and N856K are identified in conjunction with T95I (\cite{omi_alert,omi_anti_escape,omi_mu_str}). As the virus continued to evolve, mutations D405N and R408S, which were reported in the later BA.2, were observed. In November 2021, the $\Delta24-26$ deletions and the A27S mutation were observed to stem from T95I, indicating the active evolution of the virus in generating the Omicron BA.2 variant. With the rapid spread of the Omicron variant, mutations Q183E, L212I, V213G and deletion $\Delta$211, which reported in Omicron XBB and Omicron JN.1, were noted prior to their widespread prevalence. 
+In June 2023, F486 were outlined with notable variations, transitioning from mutation F486V to F486S and then to F486P (\cite{ba45_escpae}). In July 2023, post-RBD mutations, including E554K, A570V, P621S, and S939F, which have subsequently been reported in the BA.2.86 lineage of the Omicron variant, were highlighted (\cite{286,2_86_escape}).
+
+
+
+\begin{figure*}[!http]
+\includegraphics[width=1.0\linewidth]{Figure/punct_evo_bs_revised.png}% Here is how to import EPS art
+\caption{Punctuated evolution of the SARS-CoV-2 spike protein characterized by the collective synchronized Hilbert frequency. a) Monthly-dependent evolution of the collective synchronization Hilbert frequency from Aug 2020 to Feb 2024. b) Temporal evolution of the collective synchronized frequency and its adaptive frequency range (denoted by bars) between Aug 2020 and Feb 2024. c) Synchronized leading pairs in the punctuated equilibrium states corresponding to different variants: Original (2020-08), Alpha (2020-11, 2021-02), Delta (2021-04), Omicron BA.1 (2021-11), Omicron BA.2 (2022-01), and Omicron BA.4/5 (2022-09). The pair correlation strength is indicated by the thickness of the edges. d) The structure of the spike protein with leading mutations in NTD and RBD highlighted in blue and yellow respectively.}
+\label{punct}
+\end{figure*}
+
+
+
+\subsection{Adaptive Coevolutionary Landscape in Sequence Space}
+
+We characterize the epistatic mutations in spike protein with sequence-specific ACS and construct the coevolutionary landscape in sequence space. With all sequence data collected from December 2019 to January 2024, ACS is calculated from the activity of individual amino acid mutations $K^a$ and the epistatic coupling quantified by $C^{i,j}$. The mutation activity of single amino acid incorporates SAP $s$ and the selectivity imposed on the residue characterize by the skewness of the amino acid distribution $k$. The magnitude of SAP indicates the number of amino acid options for a specific residue, carrying information about the adaptability of a particular sequence (\cite{viral_evo_constrain,quasispecies}). The skewness, on the other hand, encapsulates the degree of selectivity and variation of amino acids, providing the detailed evaluation of the selection over evolutionary steps (\cite{skewness}). A consistent positive correlation between skewness and $s$ is observed, suggesting an underlying interplay between sequence variability and selectivity (see SI for details).
+
+
+\begin{figure*}[!http]
+\centering
+\includegraphics[width=1.0\linewidth]{Figure/evo_fig_bs_revised.png}% Here is how to import EPS art
+\caption{Adaptive coevolutionary landscapes of the SARS-CoV-2 spike protein. a) Comprehensive adaptive coevolutionary landscape in the sequence space constructed with spike-protein sequences collected from Dec.2019 to Feb. 2024. Dynamic adaptive coevolutionary landscapes during the pre-Omicron stage (b) and post-Omicron stage (c). The key variants are labeled by the corresponding markers and evolutionary trajectories are denoted with arrows. The basin depth $\Lambda$ (d) and the basin width $\Gamma$ (e) of the coevolutionary landscapes for different variants. f) Schematic illustration of the dynamic patterns across the coevolutionary landscapes in the scenarios of a sharp-gradient metastability (left) versus a shallow-gradient metastability (right), where the mutations are indicated by the motions in the sequence space.}
+\label{lad}
+\end{figure*}
+
+As depicted in Figure. \ref{lad}a, this framework unveils a general coevolutionary landscape of the spike protein throughout different stages of COVID-19 pandemic, where VOCs of high fitness advantages sit within basins, surrounded by barriers of lower fitness lineages. Since the majority of mutations sampled within the spike sequence are expected to be neutral or slightly deleterious (\cite{neutral_mu,delterious_mu}), most sequences demonstrate limited variation in the coevolutionary landscape, corresponding to the smooth basin areas. Only a few mutations that can impact the functional properties of the spike hold the ability to alter the virus adaptation  (\cite{neutral_mu,overall_mu_review,mutation_neu}). 
+
+Figure. \ref{lad}b and c present detailed adaptive coevolutionary landscapes for VOCs prior to Omicron and for Omicron lineages receptively. The outlined leading mutations are expected to have a great impact on the evolution by conferring fitness advantage. As indicated by white arrows, leading mutations can drive the evolution of the virus in the basin areas. As discussed above, the point mutation D614G was observed to be rising shortly after the emergence of SARS-CoV-2, leading to a proliferation of sequences with D614G mutations and a increased infectivity (\cite{6141,614,6142}), as shown by the local maximum in Figure. \ref{lad}b. 
+
+From the D614G background, the virus followed two distinct evolutionary trajectories characterized by the acquisition of N501Y and L452R, respectively. The N501Y mutation enhances overall spike binding affinity (\cite{N501Y_binding,N501Y_alpha_bete} and promotes sequence space exploration by conferring a significant fitness advantage (\cite{N501Y_enhance_trans}), leading to the emergence of Alpha, Bata and Gamma variants (\cite{N501Y_lineage}). Compared to Alpha, Beta and Gamma show a closer phylogenetic relationship by sharing three common RBD mutations (\cite{phylogenetic_sar}). As presented in Figure. \ref{lad}b, Gamma exhibits higher fitness advantage in contrast with beta, where S2 mutation H655Y may play a critical role in the enhanced infectivity (\cite{H655Y}). Similar to N501Y, L452R sub-lineages, especially Delta, have been reported to play a significant role in massive expansion of SARS-CoV-2 in autumn 2021 (\cite{L452R_expansion}). The evolution trajectories from D614G sub-lineages to L452R sub-lineages are explicitly depicted (\cite{L452R_expansion,phylogenetic_sar}). In the autumn of 2022, the co-circulation of VOCs substantially increased the risk of co-infection, contributing to the emergence of recombination lineages (\cite{coinfect_recom} as shown in the intersection area in Figure. \ref{lad}b. The prevalence of VOCs may facilitate the emergence of recombination lineages by conferring fitness advantage to sequences in these intersecting regions. 
+
+The emergence of the Omicron variant has garnered worldwide attention due to its exceptionally high transmissibility and potent immune evasion capabilities (\cite{omi_alert,omi_anti_escape}). Omicron exhibited a flatter and deeper landscape compared to Alpha and Delta. The large proportion of shared mutations between the Omicron variant and previous circulating variants may effectively reduce the evolutionary barrier between these lineages and Omicron.
+
+The detailed coevolutionary landscape of the Omicron sub-lineages is demonstrated in Figure. \ref{lad}c. In general, subtle barriers are observed near the flat basins of the landscape, suggesting the continuous rapid adaptation of the Omicron variants. Following the emergence of Omicron BA.1, BA.2 quickly appeared with a distinct antigenicity and notable fitness advantage (\cite{ba2}), most attributed to the acquisition of the RBD S371F mutation and deletions within the NTD N1 loop (\cite{S371F,rdr}). Additionally, new Omicron lineages BA.4/5 emerged with two additional spike RBD mutations L452R and F486V as well as the R493Q reversion with respect to BA.2 (\cite{BA45_emer}). BA.4/5 also differ from the BA.2 sub-lineage by the NTD deletion $\Delta$ 69/70. The convergence evolution of Omicron in acquiring these mutations might contribute to the emergence of BQ.1, which locates in proximity to BA.4/5 (\cite{BQ1}). Driven by the intensive selection pressure, BA.2 and its descendants actively adapted to the human host as illustrated at Figure. \ref{lad}c. The drift from the sub-lineage BA.2 to BA.2.75 to XBB has indicated a possible adaption pathway of the Omicron BA.2 subvariants (\cite{XBB_recom}). 
+
+As the virus evolved, an expansion of the sequence space and an increase in fitness have been noted with successive emergence of Alpha, Delta and Omicron (Fig. \ref{lad}d,e), implying a growing diversity of the spike sequences. This expanded sampling space associated with the emergence of VOCs, particularly Omicron, suggests that the virus prefers a more generalized, flatter, and deepercoevolutionary landscape, accompanied by an increase in mutation tolerance (\cite{tang2021dynamics,sgd_tu}). As suggested by Figure. \ref{lad}f, fitness is robust against mutations when the protein sequence is in a well with a small curvature (\cite{tang2021dynamics}). Mutations lead to only slight changes in fitness in such a case, but even small mutations can result in significant alterations in the viral fitness if the curvature is large. 
+
+
+\section{Discussion}
+
+Epistatic interactions between amino acids are important for understanding the evolutionary dynamics of proteins, especially in punctuated evolutionary processes where series of intermittent bursts are separated by long periods of inactivity (\cite{gould1977punctuated,raup1986biological}). We demonstrate that the evolution of the SARS-CoV-2 spike protein follows this dynamic pattern. The continuous near-neutral mutations have been punctuated by the rare but beneficial co-mutations with the emergence of new connected clusters in the epistasis networks. The near-neutral mutations contribute to the random fluctuations and short-range jumps in the sequence space. However, the correlated epistatic mutations lead to the tremendous changes in viral functions (\cite{kauffman1991coevolution}). The interactions between these mutations speed up the genetic deviation and contribute to the emergence of new dominating variants. 
+
+%The shift in the Hilbert frequency space corresponds to a potential deviation of the virus highlights its utility in monitoring and serving as a sensitive indicator for detecting variations in sequence space.
+
+The adaptive coevolutionary landscape of the spike protein highlights the important role of leading mutations in driving the evolution of the virus. These mutations can significantly alter the coevolutionary landscape. With the emergence of Alpha, Delta and Omicron, the virus exhibited an increased tolerance for new mutations, particularly in the case of Omicron, as indicated by the expanding basin areas. This notable expansion of sampling capability in the sequence space might stem from Omicron's enhanced immune escape compared to earlier variants (\cite{omi_anti_escape}). Omicron escaped many therapeutic monoclonal antibodies and most antibodies produced by vaccines (\cite{omicron_vaccine_escape,omi_anti_escape}). These factors introduce a flatter and deeper coevolutionary landscape of the Omicron variant, allowing a fast adaptation and can quickly achieve local optimization after being targeted by the host immune system. Additionally, a deeper basin can tolerate more slightly deleterious mutations that float above the landscape. These landscape characteristics allow for a broader sampling of the sequence space, which may facilitate the emergence of multiple Omicron sub-lineages. 
+
+
+
+\section{Conclusion}
+
+In conclusion, we present a time-resolved characterization of the epistatic evolution of the SARS-CoV-2 spike protein, with PunTeD PCM method. The time-resolved statistic feature of the epistatic network is analyzed, suggesting a preference attachment mechanism with the emergence of novel variants. The detailed temporal cooperative between amino acid is evaluated by collective synchronized frequencies, and a punctuated evolutionary behavior is observed. The relatively stable mutations of the spike protein are actively punctuated by the emergence of new variants. Shifts of the Hilbert frequency correspond to the important emerging variants, highlighting its utility in real-time monitoring of viral evolution. %By extending the PunTeD PCM framework, comprehensivecoevolutionary landscapes are constructed in characterizing evolutionary features for different variants, 
+Furthermore, coevolutionary landscapes are constructed by calculating ACS in the sequence space. Detailed analysis of these landscapes provides valuable insights into the evolutionary dynamics of the spike protein. The Alpha and Delta variants showed distinct evolutionary trajectories from those of D614G variants. (\cite{delta_neuta,N501Y_binding}). The Omicron variants, on the other hand, had a different strategy of sampling the sequence space (\cite{omi_alert,omi_anti_escape}). Based on PunTeD PCM, the coevolutionary landscapes provide an intuitive illustration of the evolution of the spike protein under epistatic interactions. Given its effectiveness in systematically monitoring SARS-CoV-2 evolution, this approach could also be applied to investigate evolutionary processes of other viruses. 
+
+\section{Acknowledgements}
+
+We acknowledge the GISAID Initiative for sharing the data. This work has been funded by the Research Grants Council of Hong Kong (16305623), HKUST (R9418), ASPIRE League Partnership Seed Fund Program (VPRDO19RD03-16), and Society of Interdisciplinary Research (SOIREE).  
+
+\section{Data Availability}
+
+The sequences of spike protein are available on GISAID. The code employed in this study is publicly accessible via the GitHub repository at https://github.com/hbsulab/PunTeD-PCM. The processed data are available and regularly updated on a monthly basis at https://hbsulab.github.io/deLemus/
+%If you have any acknowledgements, please include them here.
+%\section{Acknowledgements}
+
+%If your paper has accompanying supplementary data, please include the below statement in your PDF.
+%\section{Supplementary Material}
+%Data available from the Dryad Digital Repository:
+% \href{http://dx.doi.org/10.5061/dryad.[NNNN]}%
+% {http://dx.doi.org/10.5061/dryad.[NNNN]}.
+%\url{http://dx.doi.org/10.5061/dryad.[NNNN]}.
+
+%%%%%%%%%%%%%%%%%%%% REFERENCES %%%%%%%%%%%%%%%%%%
+
+% The best way to enter references is to use BibTeX.
+
+\bibliographystyle{apalike}
+%\printbibliography
+\bibliography{sample}
+
+%\vfill\eject
+
+% Alternatively you could enter them by hand, like this:
+
+% 1. All authors should be listed i.e. no use of et al.
+% 2. Dashes should not be used to replace author names in repeat entries
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
