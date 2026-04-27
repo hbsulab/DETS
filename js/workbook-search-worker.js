@@ -48,6 +48,7 @@ async function loadSearchIndex(indexPath) {
   };
 
   return searchIndexCache;
+}
 
 async function runSearch(requestId, payload) {
   const searchIndex = await loadSearchIndex(payload.indexPath);
