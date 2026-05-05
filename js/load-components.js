@@ -1640,6 +1640,7 @@ function renderVariantWidget(pageKey) {
       </div>
       <div class="button-row">
         <button type="button" id="searchButton-${pageKey}">Search</button>
+        <a class="more-link" style="margin-left:12px; align-self:center;" href="${getResourcePrefix()}pages/data.html?variant=${encodeURIComponent(String(pageKey).replace(/^omicron-/, ''))}">Open in Data →</a>
       </div>
       <p class="sequence-note">Choose a date range, toggle defining RNA/spike mutations, then press Search to preview the first matching sequence.</p>
     `;
@@ -1698,18 +1699,109 @@ function renderVariantWidget(pageKey) {
       </div>
     `;
 
+      // Domain-organized mutation lists (NTD, RBD, CTD, S2) — render RNA (left) and spike (right)
+      const domains = {
+        NTD: { min: 1, max: 305 },
+        RBD: { min: 319, max: 541 },
+        CTD: { min: 542, max: 685 },
+        S2: { min: 686, max: 2000 }
+      };
+
+      function mapTokenToDomain(token, isRna = false) {
+        if (!token) return null;
+        const m = String(token).match(/(\d{1,4})/);
+        if (!m) return null;
+        let pos = Number(m[1]);
+        // Convert RNA position (nucleotides) to amino acid position
+        if (isRna) {
+          pos = Math.ceil(pos / 3);
+        }
+        for (const [name, range] of Object.entries(domains)) {
+          if (pos >= range.min && pos <= range.max) return name;
+        }
+        return null;
+      }
+
+      const proteinDomainBuckets = { NTD: [], RBD: [], CTD: [], S2: [] };
+      (Array.isArray(data.proteinMutations) ? data.proteinMutations : []).forEach((tok) => {
+        const d = mapTokenToDomain(tok) || 'CTD';
+        proteinDomainBuckets[d] = proteinDomainBuckets[d] || [];
+        proteinDomainBuckets[d].push(tok);
+      });
+
+      const rnaDomainBuckets = { NTD: [], RBD: [], CTD: [], S2: [] };
+      (Array.isArray(effectiveRnaMutations) ? effectiveRnaMutations : []).forEach((tok) => {
+        const d = mapTokenToDomain(tok, true); // true = isRna
+        if (!d) return; // skip mutations that don't map to spike domains
+        rnaDomainBuckets[d] = rnaDomainBuckets[d] || [];
+        rnaDomainBuckets[d].push(tok);
+      });
+
+      // Sort mutations within each domain by position
+      function sortMutationsByPosition(list) {
+        return list.slice().sort((a, b) => {
+          const mA = String(a).match(/(\d{1,4})/);
+          const mB = String(b).match(/(\d{1,4})/);
+          const posA = mA ? Number(mA[1]) : Infinity;
+          const posB = mB ? Number(mB[1]) : Infinity;
+          return posA - posB;
+        });
+      }
+
+      // Sort all domain buckets
+      ['NTD', 'RBD', 'CTD', 'S2'].forEach((domain) => {
+        proteinDomainBuckets[domain] = sortMutationsByPosition(proteinDomainBuckets[domain]);
+        rnaDomainBuckets[domain] = sortMutationsByPosition(rnaDomainBuckets[domain]);
+      });
+
+      function renderBadges(list, isRna = false) {
+        if (!list || !list.length) return '—';
+        return list.map((tok) => {
+          const domain = mapTokenToDomain(tok, isRna);
+          const cls = domain === 'NTD' ? 'domain-NTD' : domain === 'RBD' ? 'domain-RBD' : domain === 'S2' ? 'domain-S2' : 'domain-CTD';
+          return `<span class="domain-badge ${cls}">${escapeHtml(tok)}</span>`;
+        }).join(' ');
+      }
+
+      structureSection.innerHTML += `
+        <h3>Defining RNA and spike mutations by domain</h3>
+        <div class="variant-pair-row">
+          <div class="text-block">
+            <h4>RNA mutations</h4>
+            <div class="comparison-grid">
+              ${['NTD','RBD','CTD','S2'].map((d) => `
+                <div class="comparison-card">
+                  <h4>${d}</h4>
+                  <div class="mutations-list">${renderBadges(rnaDomainBuckets[d] || [], true)}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="text-block">
+            <h4>Spike mutations</h4>
+            <div class="comparison-grid">
+              ${['NTD','RBD','CTD','S2'].map((d) => `
+                <div class="comparison-card">
+                  <h4>${d}</h4>
+                  <div class="mutations-list">${renderBadges(proteinDomainBuckets[d] || [])}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        <p class="sequence-note">Domain boundaries are approximate (NTD, RBD, CTD, S2). Click mutations above to include them in the Data search.</p>
+      `;
+
     const introBlock = container.querySelector('.text-block');
     const insertionAnchor = introBlock ? introBlock.nextElementSibling : container.firstElementChild;
     if (insertionAnchor) {
       container.insertBefore(treeSection, insertionAnchor);
       container.insertBefore(structureSection, insertionAnchor);
-      container.insertBefore(seqSection, insertionAnchor);
-      container.insertBefore(resultsSection, insertionAnchor);
+      // Reference sequence and results panels are moved to the Data page; do not insert here
     } else {
       container.appendChild(treeSection);
       container.appendChild(structureSection);
-      container.appendChild(seqSection);
-      container.appendChild(resultsSection);
+      // Reference sequence and results panels are moved to the Data page; do not insert here
     }
 
     const pdbSelect = structureSection.querySelector(`#pdbSelect-${pageKey}`);
@@ -2899,7 +2991,8 @@ function initVariantCladeFigureHighlight(pageKey) {
   const controlsId = 'clade-controls-row';
   const originalCladeSrc = cladeObject.getAttribute('data') || '';
   let activeMode = 'ancestors';
-  let hasInteracted = false;
+  // show traced ancestors by default when entering variant pages
+  let hasInteracted = true;
 
   const toKey = (x, y) => `${Number(x).toString()},${Number(y).toString()}`;
 
@@ -3126,13 +3219,17 @@ function initVariantCladeFigureHighlight(pageKey) {
 
   if (cladeObject.contentDocument) {
     ensureControls();
-    setActiveButton(null);
+    activeMode = 'ancestors';
+    hasInteracted = true;
+    setActiveButton('ancestors');
     setNote(covariantsCitationHtml);
     applyHighlight();
   } else {
     cladeObject.addEventListener('load', () => {
       ensureControls();
-      setActiveButton(null);
+      activeMode = 'ancestors';
+      hasInteracted = true;
+      setActiveButton('ancestors');
       setNote(covariantsCitationHtml);
       applyHighlight();
     }, { once: true });

@@ -15,21 +15,58 @@
   <div class="container">
     <div class="page-header">
       <h1>SARS-CoV-2 Evolutionary Dynamics</h1>
-      <p>Comprehensive tracking of viral evolution, variant emergence, and global spread through high-resolution genomic epidemiology.</p>
     </div>
 
     <div class="text-block">
-      <h2>Understanding the Evolutionary Trajectory</h2>
-      <p>Since its emergence in late 2019, SARS-CoV-2 has accumulated numerous mutations across its genome. Key variants such as Alpha, Delta, and Omicron have successively dominated global transmission, driven by changes in transmissibility, immune evasion, and virulence. The Deep Evolution Tracing System integrates time-calibrated phylogenetic trees, mutational signatures, and epidemiological metadata to provide a detailed view of these evolutionary events.</p>
-      <p>Our platform leverages daily updated sequences from GISAID and NCBI, enabling near real-time tracking of emerging lineages. Researchers can explore clade dynamics, mutation frequencies, and lineage replacement patterns across different geographical regions and time windows.</p>
+      <h2>What is DETS?</h2>
+      <p>The Deep Evolution Tracing System (DETS) is a comprehensive platform for tracking SARS-CoV-2 viral evolution, variant emergence, and global spread through high-resolution genomic epidemiology. Since SARS-CoV-2's emergence in late 2019, the virus has accumulated numerous mutations across its genome. Key variants such as Alpha, Delta, and Omicron have successively dominated global transmission, driven by changes in transmissibility, immune evasion, and virulence.</p>
+      <p>Our platform integrates time-calibrated phylogenetic trees, mutational signatures, epidemiological metadata, and structural biology insights to provide a detailed, interactive view of viral evolution. Researchers can explore clade dynamics, mutation frequencies, lineage replacement patterns, and spike protein structural changes across different geographical regions and time windows.</p>
     </div>
 
-    <div class="visualization-block">
-      <h3>Spike Glycoprotein Domains</h3>
-      <div class="viz-placeholder">
-        <img src="assets/images/deLemus/about/Domains.png" alt="Subunits and Domains of the Spike" style="max-width:100%;height:auto;display:block;margin:0 auto;" />
-        <img src="assets/images/deLemus/about/movie3.gif" alt="Spike glycoprotein animation" style="max-width:100%;height:auto;display:block;margin:14px auto 0;" />
+    <div class="cards-grid">
+      <div class="info-card">
+        <h4><span class="card-icon">📊</span> Taxonomy & Variants</h4>
+        <p>Explore major SARS-CoV-2 variants (Alpha, Beta, Delta, Omicron) with mutation profiles, structure context, and phylogenetic relationships.</p>
+        <a href="taxonomy.html" class="more-link">Browse variants →</a>
       </div>
+      <div class="info-card">
+        <h4><span class="card-icon">🧪</span> Virus Components</h4>
+        <p>Detailed analysis of spike protein domains, RNA structure, RdRp mechanics, and viral cycle dynamics with interactive 3D models.</p>
+        <a href="virus-components.html" class="more-link">Explore components →</a>
+      </div>
+      <div class="info-card">
+        <h4><span class="card-icon">📈</span> Evolutionary Insights</h4>
+        <p>Mutation rate dynamics, codon usage patterns, phylogenetic networks, molecular dynamics, and pandemic-scale evolutionary analysis.</p>
+        <a href="characteristics.html" class="more-link">View analysis →</a>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      <div class="info-card">
+        <h4><span class="card-icon">📚</span> Characteristics</h4>
+        <p>Structural and mutational analyses: mutation rate, PSD, dynamics, codon usage and RdRp context.</p>
+        <a href="characteristics.html" class="more-link">Explore characteristics →</a>
+      </div>
+      <div class="info-card">
+        <h4><span class="card-icon">📂</span> Data</h4>
+        <p>Download curated variant sequences, mutation tables, and alignment resources for analysis.</p>
+        <a href="pages/data.html" class="more-link">Open Data →</a>
+      </div>
+      <div class="info-card">
+        <h4><span class="card-icon">🔗</span> Useful Links</h4>
+        <p>Handy external resources and project documentation for downstream analysis and tracking.</p>
+        <a href="pages/links.html" class="more-link">Useful links →</a>
+      </div>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>Highlighted Research Areas</h2>
+      <h3>Spike Protein Evolution</h3>
+      <p>The spike glycoprotein is the primary driver of SARS-CoV-2 evolution, controlling receptor binding, immune recognition, and entry efficiency. Major variants carry coordinated spike mutations that balance transmissibility and immune evasion. We track spike-specific mutations, domain-level dynamics, conformational changes, and their phenotypic consequences across the pandemic timeline.</p>
+      <h3>Variant Emergence &amp; Fitness</h3>
+      <p>Novel variants emerge through punctuated bursts of mutation followed by rapid lineage expansion when fitness advantages exist. We analyze mutation rate trajectories, epistatic interactions, and lineage replacement dynamics to predict variant behavior and pandemic trends.</p>
+      <h3>Immune Landscape Dynamics</h3>
+      <p>Omicron and its descendants demonstrate remarkable immune escape through spike RBD mutations that reduce antibody binding while maintaining ACE2 engagement. Our platform tracks immune-relevant mutations and their population prevalence across time and geography.</p>
     </div>
 
     <div class="visualization-block">
@@ -53,55 +90,23 @@
       </div>
     </div>
 
-    <div class="data-table-wrapper">
-      <h3>📊 Key Variants and Their Characteristics</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th>Variant</th><th>WHO Label</th><th>First Detected</th><th>Spike Mutations</th><th>Relative Fitness</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Alpha</td><td>Alpha</td><td>Sep 2020</td><td>N501Y, D614G</td><td>+50%</td></tr>
-          <tr><td>Delta</td><td>Delta</td><td>Oct 2020</td><td>L452R, P681R</td><td>+60%</td></tr>
-          <tr><td>Omicron BA.1</td><td>Omicron</td><td>Nov 2021</td><td>~30 mutations</td><td>+100%</td></tr>
-          <tr><td>Omicron BA.5</td><td>Omicron</td><td>Mar 2022</td><td>L452R, F486V</td><td>High immune escape</td></tr>
-          <tr><td>JN.1</td><td>Omicron</td><td>Sep 2023</td><td>L455S, F456L</td><td>Enhanced transmissibility</td></tr>
-          <tr><td>KP.2</td><td>VUM</td><td>2024</td><td>R346T, F456L, V1104L</td><td>Monitored descendant of JN.1</td></tr>
-          <tr><td>KP.3</td><td>Omicron lineage</td><td>2024</td><td>S31 deletion profile (lineage-related)</td><td>Lineage with monitored descendants</td></tr>
-          <tr><td>XFG</td><td>VUM (latest WHO)</td><td>2025</td><td>R346T, K444R, V445R, F456L, N487D, Q493E</td><td>Newest VUM listed by WHO (23 Feb 2026 update)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="data-table-wrapper">
-      <h3>Core Tracking Metrics</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Tracked lineages</td><td>Major VOC + selected VOI</td><td>Configurable list by region and time</td></tr>
-          <tr><td>Update cadence</td><td>Daily/weekly</td><td>Depends on sequence ingestion pipeline</td></tr>
-          <tr><td>Data sources</td><td>GISAID, NCBI</td><td>Plus local metadata curation</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="cards-grid">
-      <div class="info-card">
-        <h4><span class="card-icon">🧬</span> Mutation Tracker</h4>
-        <p>Monitor lineage-defining mutations across time and geography. Explore interactive heatmaps and frequency plots.</p>
-        <a href="https://outbreak.info/" class="more-link" target="_blank" rel="noopener noreferrer">Launch tool →</a>
-      </div>
-      <div class="info-card">
-        <h4><span class="card-icon">🌍</span> Global Phylogeny</h4>
-        <p>View time-resolved phylogenetic trees with geographic annotations. Filter by date, region, and lineage.</p>
-        <a href="https://nextstrain.org/ncov/gisaid/global" class="more-link" target="_blank" rel="noopener noreferrer">Explore trees →</a>
-      </div>
-      <div class="info-card">
-        <h4><span class="card-icon">📥</span> Data Downloads</h4>
-        <p>Access curated sequence alignments, metadata tables, and tree files for downstream analysis.</p>
-        <a href="https://github.com/japhertjpeg/DETS" class="more-link" target="_blank" rel="noopener noreferrer">Download →</a>
-      </div>
+    <div class="text-block">
+      <h2>DETS Team</h2>
+      <p>This project was developed by a dedicated team of researchers and developers:</p>
+      <ul style="columns: 2; column-gap: 2em; list-style-position: inside;">
+        <li>Muhammad Hasan</li>
+        <li>Shihong Chen</li>
+        <li>Mengqi Jia</li>
+        <li>Cheuk Fung Alvin Leung</li>
+        <li>Wentao Xu</li>
+        <li>Ka Pui Chang</li>
+        <li>Chi Ming Kan</li>
+        <li>Shan Qi Yap</li>
+        <li>Bing Yuan</li>
+        <li>Kaicheng Zhu</li>
+        <li>Xiakun Chu</li>
+        <li>Haibin Su</li>
+      </ul>
     </div>
 
     <div class="footnote-block">
@@ -109,7 +114,7 @@
       <ul>
         <li>GISAID: Global Initiative on Sharing All Influenza Data — <a href="https://gisaid.org/" style="color:#1b6c8a;" target="_blank" rel="noopener noreferrer">acknowledgement</a></li>
         <li>Nextstrain: Real-time tracking of pathogen evolution</li>
-        <li>Our research: <em>Deep Evolution Tracing System v2.0</em> — manuscript under review</li>
+        <li>Hasan, M., Chen, S., Jia, M., Leung, C. F. A., Xu, W., Chang, K. P., Kan, C. M., Yap, S. Q., Yuan, B., Zhu, K., Chu, X., & Su, H. Deciphering the Temporal and Spatial Mutation Dynamics of the SARS-CoV-2 Spike Glycoprotein. In preparation.</li>
       </ul>
       <p style="margin-top: 12px;">For detailed methodology, please refer to the <a href="https://github.com/japhertjpeg/DETS#readme" style="color:#1b6c8a;" target="_blank" rel="noopener noreferrer">documentation</a>.</p>
     </div>

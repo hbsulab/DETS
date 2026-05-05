@@ -392,12 +392,64 @@
       color: #2f556b;
       margin-bottom: 18px;
     }
+        /* Buttons used in the Data page */
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: 1px solid transparent;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.18s ease;
+        }
+        .search-btn {
+          background: linear-gradient(180deg,#1b6c8a,#0f5870);
+          color: #fff;
+          box-shadow: 0 6px 18px rgba(18,79,98,0.14);
+          border-color: rgba(255,255,255,0.06);
+        }
+        .search-btn:hover { transform: translateY(-2px); }
+        .download-btn {
+          background: #ffffff;
+          color: #0f5c7a;
+          border: 1px solid #cfe9f6;
+          box-shadow: 0 3px 10px rgba(15,92,122,0.06);
+        }
+        .download-btn:hover { background: #f2fbff; }
+        .mut-action-btn {
+          padding: 6px 10px;
+          border-radius: 6px;
+          font-weight: 600;
+          background: #f7fafc;
+          color: #155a6f;
+          border: 1px solid #e6f4f9;
+          cursor: pointer;
+        }
     .more-link {
       color: #1482a8;
       font-weight: 600;
       text-decoration: none;
       border-bottom: 1px dashed #9fc9dc;
     }
+
+    /* Domain color badges for mutation lists */
+    .domain-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: #072126;
+      font-weight: 600;
+      margin: 2px 4px 2px 0;
+      font-size: 0.9rem;
+    }
+    .domain-NTD { background: #c8f5d0; }
+    .domain-RBD { background: #ffd9b3; }
+    .domain-CTD { background: #ffd0e6; }
+    .domain-S2  { background: #cde7ff; }
+
+    .mutations-list { white-space: pre-wrap; word-break: break-word; }
     .more-link:hover {
       color: #0a5f7e;
       border-bottom-style: solid;
@@ -584,8 +636,16 @@
     button.mutation-pill.is-active {
       background: #155a74;
       color: #ffffff;
-      box-shadow: 0 6px 14px rgba(21, 90, 116, 0.18);
+      box-shadow: none;
+      border: 2px solid rgba(21,90,116,0.95);
+      transform: translateY(-1px);
     }
+
+    /* Ensure domain-colored mutation pills keep their domain backgrounds */
+    button.mutation-pill.domain-NTD { background: #c8f5d0; color: #072126; }
+    button.mutation-pill.domain-RBD { background: #ffd9b3; color: #072126; }
+    button.mutation-pill.domain-CTD { background: #ffd0e6; color: #072126; }
+    button.mutation-pill.domain-S2  { background: #cde7ff; color: #072126; }
 
     .comparison-grid {
       display: grid;

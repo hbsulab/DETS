@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>DETS | Omicron</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+</head>
+<body>
+
+<div id="header-placeholder"></div>
+<div id="navigator-placeholder"></div>
+
+<div id="main_container">
+  <div class="container">
+    <div class="page-header">
+      <h1>Omicron Variants</h1>
+      <p>Overview of Omicron and its major subvariants (BA.2, BA.4&5, JN.1, KP.2) with comparative mutation analysis, immune-landscape dynamics, and phylogenetic context.</p>
+    </div>
+
+    <div class="text-block">
+      <h2>Omicron Overview</h2>
+      <p>Omicron emerged in late 2021 and rapidly displaced Delta as the dominant global lineage. Characterized by an unusually high number of spike mutations (~30 relative to Wuhan-Hu-1), Omicron exhibits enhanced transmissibility and significant immune escape properties. The lineage has continued to evolve, giving rise to numerous subvariants that balance viral fitness, immune evasion, and transmission dynamics.</p>
+      <p>Unlike previous variants dominated by a single lineage, Omicron has spawned a complex ecosystem of subvariants. Key branches include BA.1 (founder lineage), BA.2 (significant immune escape), BA.4/BA.5 (L452R acquisition), and downstream descendants like JN.1 and KP.2. These subvariants demonstrate punctuated evolutionary dynamics, with distinct selective pressures driving mutation accumulation in immune-facing domains.</p>
+    </div>
+
+    <div class="visualization-block">
+      <h3>Clade Relationship Overview</h3>
+      <div class="clade-figure-wrap">
+        <object id="clades-tree-object" type="image/svg+xml" data="../../assets/images/clades.svg" aria-label="SARS-CoV-2 clade relationship tree"></object>
+      </div>
+      <p class="clade-note">Source: <a href="https://covariants.org/" target="_blank" rel="noopener noreferrer">CoVariants</a>. Default view: <strong>trace ancestors</strong>.</p>
+    </div>
+
+    <div class="visualization-block omicron-evolution-figures">
+      <h3>Omicron Subvariant Evolution</h3>
+      <div class="viz-placeholder omicron-figures-row">
+        <img src="../../assets/images/deLemus/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" style="width: 100%; height: auto; display: block;" />
+        <img src="../../assets/images/deLemus/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" style="width: 100%; height: auto; display: block;" />
+      </div>
+      <p class="sequence-note"><strong>Figure.</strong> Temporal evolution and comparative phylogenetic relationships of major Omicron subvariants (BA.2, BA.4&5, JN.1, KP.2) throughout 2022-2024.</p>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>Omicron Subvariants Comparison</h2>
+      <p>Below are detailed profiles of four major Omicron-descended subvariants. Each subpage provides in-depth mutation analysis, structural context, phylogenetic relationships, and epidemiological significance.</p>
+    </div>
+
+    <div class="subpage-grid">
+      <a class="subpage-card" href="omicron-ba2.html">
+        <h3>BA.2</h3>
+        <p>Stealth Omicron sublineage with elevated immune escape and rapid global spread.</p>
+      </a>
+      <a class="subpage-card" href="omicron-ba45.html">
+        <h3>BA.4 &amp; BA.5</h3>
+        <p>Twin subvariants combining L452R acquisition with enhanced transmissibility.</p>
+      </a>
+      <a class="subpage-card" href="jn1.html">
+        <h3>JN.1</h3>
+        <p>Convergent evolution descendant with RBD adaptations and enhanced fitness.</p>
+      </a>
+      <a class="subpage-card" href="kp2.html">
+        <h3>KP.2</h3>
+        <p>Recent FLiRT-lineage variant with monitored immune-escape trajectory.</p>
+      </a>
+    </div>
+
+    <div class="text-block section-gap">
+      <h2>Key Defining Characteristics</h2>
+      <p>Omicron subvariants share a common ancestral mutation platform while diverging in specific immune-facing and fitness-relevant sites. The rapid succession of subvariants reflects strong positive selection for escape mutations and incremental fitness gains. Understanding their relative prevalence, geographic distribution, and antigenic profiles is essential for surveillance and vaccine strategy adaptation.</p>
+    </div>
+
+    <div class="footnote-block">
+      <h4>References</h4>
+      <ul>
+        <li id="ref-1">[1] WHO. <a href="https://data.who.int/dashboards/covid19/variants" target="_blank" rel="noopener noreferrer">WHO COVID-19 Dashboard</a> (2024).</li>
+        <li id="ref-2">[2] Nextstrain. <a href="https://nextstrain.org/ncov" target="_blank" rel="noopener noreferrer">Real-time tracking of SARS-CoV-2 evolution</a>.</li>
+        <li id="ref-3">[3] CoVariants. <a href="https://covariants.org/" target="_blank" rel="noopener noreferrer">SARS-CoV-2 variants and mutations tracker</a>.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="../../js/load-components.js?v=20260421-2"></script>
+</body>
+</html>
