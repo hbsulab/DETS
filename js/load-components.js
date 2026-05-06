@@ -2502,6 +2502,7 @@ function initCladeNavigationLinks() {
     const allPaths = isTaxonomyPage ? Array.from(svgDoc.querySelectorAll('path')) : [];
     const nodeMeta = new Map();
     const parentByNodeKey = new Map();
+    const childrenByNodeKey = new Map();
 
     if (isTaxonomyPage) {
       nodes.forEach((node) => {
@@ -2521,6 +2522,11 @@ function initCladeNavigationLinks() {
         }
         // In this SVG, each path starts at the child node and ends at its parent node.
         parentByNodeKey.set(endpoints.startKey, { parentKey: endpoints.endKey, path });
+
+        if (!childrenByNodeKey.has(endpoints.endKey)) {
+          childrenByNodeKey.set(endpoints.endKey, []);
+        }
+        childrenByNodeKey.get(endpoints.endKey).push({ childKey: endpoints.startKey, path });
       });
     }
 
@@ -2565,11 +2571,45 @@ function initCladeNavigationLinks() {
       });
     };
 
+    let taxonomyActiveMode = 'descendants';
+    const ensureTaxonomyControls = () => {
+      if (document.getElementById(controlsId)) return;
+      const controls = document.createElement('div');
+      controls.id = controlsId;
+      controls.className = 'button-row clade-controls';
+      controls.innerHTML = `
+        <button type="button" data-clade-mode="ancestors">Trace ancestors</button>
+        <button type="button" data-clade-mode="descendants">Trace descendants</button>
+        <button type="button" data-clade-action="reset">Reset</button>
+      `;
+      const figureWrap = cladeObject.closest('.clade-figure-wrap');
+      if (figureWrap && figureWrap.parentNode) {
+        figureWrap.parentNode.insertBefore(controls, figureWrap);
+      }
+
+      controls.addEventListener('click', (event) => {
+        const resetButton = event.target.closest('button[data-clade-action="reset"]');
+        if (resetButton) {
+          taxonomyActiveMode = 'descendants';
+          controls.querySelectorAll('button[data-clade-mode]').forEach((item) => item.classList.remove('is-active'));
+          return;
+        }
+
+        const button = event.target.closest('button[data-clade-mode]');
+        if (!button) return;
+        taxonomyActiveMode = button.dataset.cladeMode || 'ancestors';
+        controls.querySelectorAll('button[data-clade-mode]').forEach((item) => {
+          item.classList.toggle('is-active', item.dataset.cladeMode === taxonomyActiveMode);
+        });
+      });
+    };
+
     const highlightAncestorsForNode = (node) => {
       if (!isTaxonomyPage) {
         return;
       }
 
+      ensureTaxonomyControls();
       applyTaxonomyLinkedDefaults();
 
       const focusKey = parseTranslate(node.getAttribute('transform') || '');
@@ -2579,15 +2619,30 @@ function initCladeNavigationLinks() {
 
       const highlightedNodeKeys = new Set();
       const highlightedPaths = new Set();
-      let currentKey = focusKey;
-      while (currentKey) {
-        highlightedNodeKeys.add(currentKey);
-        const relation = parentByNodeKey.get(currentKey);
-        if (!relation) {
-          break;
+
+      if (taxonomyActiveMode === 'ancestors') {
+        let currentKey = focusKey;
+        while (currentKey) {
+          highlightedNodeKeys.add(currentKey);
+          const relation = parentByNodeKey.get(currentKey);
+          if (!relation) {
+            break;
+          }
+          highlightedPaths.add(relation.path);
+          currentKey = relation.parentKey;
         }
-        highlightedPaths.add(relation.path);
-        currentKey = relation.parentKey;
+      } else {
+        const addDescendants = (nodeKey) => {
+          const children = childrenByNodeKey.get(nodeKey) || [];
+          children.forEach(({ childKey, path }) => {
+            highlightedNodeKeys.add(childKey);
+            highlightedPaths.add(path);
+            addDescendants(childKey);
+          });
+        };
+
+        highlightedNodeKeys.add(focusKey);
+        addDescendants(focusKey);
       }
 
       nodeMeta.forEach((entry, key) => {
@@ -2990,8 +3045,8 @@ function initVariantCladeFigureHighlight(pageKey) {
 
   const controlsId = 'clade-controls-row';
   const originalCladeSrc = cladeObject.getAttribute('data') || '';
-  let activeMode = 'ancestors';
-  // show traced ancestors by default when entering variant pages
+  let activeMode = 'descendants';
+  // show traced descendants by default when entering variant pages
   let hasInteracted = true;
 
   const toKey = (x, y) => `${Number(x).toString()},${Number(y).toString()}`;
@@ -3037,9 +3092,9 @@ function initVariantCladeFigureHighlight(pageKey) {
   };
 
   const resetCladeView = () => {
-    activeMode = 'ancestors';
-    hasInteracted = false;
-    setActiveButton(null);
+    activeMode = 'descendants';
+    hasInteracted = true;
+    setActiveButton('descendants');
     setNote(covariantsCitationHtml);
     if (originalCladeSrc) {
       cladeObject.setAttribute('data', `${originalCladeSrc}${originalCladeSrc.includes('?') ? '&' : '?'}reset=${Date.now()}`);
@@ -3219,17 +3274,17 @@ function initVariantCladeFigureHighlight(pageKey) {
 
   if (cladeObject.contentDocument) {
     ensureControls();
-    activeMode = 'ancestors';
+    activeMode = 'descendants';
     hasInteracted = true;
-    setActiveButton('ancestors');
+    setActiveButton('descendants');
     setNote(covariantsCitationHtml);
     applyHighlight();
   } else {
     cladeObject.addEventListener('load', () => {
       ensureControls();
-      activeMode = 'ancestors';
+      activeMode = 'descendants';
       hasInteracted = true;
-      setActiveButton('ancestors');
+      setActiveButton('descendants');
       setNote(covariantsCitationHtml);
       applyHighlight();
     }, { once: true });

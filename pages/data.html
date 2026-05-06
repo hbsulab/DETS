@@ -71,7 +71,7 @@
 
     <div class="text-block">
       <h2>Variant Sequence Download Tool</h2>
-      <p>Access sequence data for SARS-CoV-2 variants with their defining RNA and spike mutations. Select one or more variants to view their mutation profiles and download combined sequences for analysis.</p>
+      <p>Search protein sequences from the corrected workbook by date and desired mutations. Select variants only if you want to prefill or compare mutation filters; otherwise use the date and mutation search form below.</p>
     </div>
 
     <div class="text-block">
@@ -95,7 +95,35 @@
       <div id="download-section-container"></div>
 
       <div id="no-variants">
-        <p><em>No variants selected yet. Use the dropdown above to add variants.</em></p>
+        <div class="text-block" style="margin-top: 8px; margin-bottom: 0;">
+          <h4 style="margin-bottom: 12px; color: #165a74;">Search sequences without selecting a variant</h4>
+          <div class="download-toolbar" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom: 12px;">
+            <div>
+              <label for="basicDateFrom">Date from</label>
+              <input id="basicDateFrom" type="date" lang="en">
+            </div>
+            <div>
+              <label for="basicDateTo">Date to</label>
+              <input id="basicDateTo" type="date" lang="en">
+            </div>
+            <div style="flex: 1 1 320px; min-width: 260px;">
+              <label for="desired-mutations">Desired mutations</label>
+              <textarea id="desired-mutations" rows="3" placeholder="Enter mutations separated by commas or semicolons, e.g. H69-, V70-, D614G" style="width:100%; padding:10px 12px; border:1px solid #d0d7e0; border-radius:8px; font: inherit; resize: vertical;"></textarea>
+            </div>
+            <div>
+              <label for="basicMutationMatch">Mutation match</label>
+              <select id="basicMutationMatch">
+                <option value="any">ANY selected mutation</option>
+                <option value="all">ALL selected mutations</option>
+              </select>
+            </div>
+            <div style="align-self: end;">
+              <button type="button" id="basicSearchButton" class="btn search-btn">Search</button>
+            </div>
+          </div>
+          <p id="basicSearchSummary" class="sequence-note"></p>
+          <div id="basicSearchResults"></div>
+        </div>
       </div>
     </div>
 
@@ -104,8 +132,7 @@
     <div class="footnote-block">
       <h4>References</h4>
       <ul>
-        <li><a href="https://www.gisaid.org/" target="_blank" rel="noopener noreferrer">GISAID</a> - Global Initiative on Sharing Avian Influenza Data</li>
-        <li><a href="https://www.ncbi.nlm.nih.gov/" target="_blank" rel="noopener noreferrer">NCBI</a> - National Center for Biotechnology Information</li>
+        <li><a href="https://www.gisaid.org/" target="_blank" rel="noopener noreferrer">GISAID</a> - Global Initiative on Sharing All Influenza Data</li>
         <li><a href="https://covariants.org/" target="_blank" rel="noopener noreferrer">CoVariants</a> - SARS-CoV-2 variants and mutations tracker</li>
       </ul>
     </div>
@@ -127,18 +154,18 @@
     });
   }
 
-  // Cached workbook rows (protein-focused from Sheet2)
+  // Cached workbook rows from the corrected workbook
   let _workbookRows = null;
   async function loadWorkbookRows() {
     if (_workbookRows) return _workbookRows;
-    const xlsxPath = '../assets/data/InputVariantsLMCM_20260118.xlsx';
+    const xlsxPath = '../assets/data/CorrectedData_AfterTimeCorrection.xlsx';
     await loadSheetJSLib();
     const res = await fetch(xlsxPath);
     if (!res.ok) throw new Error('Failed to fetch workbook');
     const arrayBuffer = await res.arrayBuffer();
     const data = new Uint8Array(arrayBuffer);
     const workbook = XLSX.read(data, { type: 'array' });
-    const proteinSheetName = workbook.SheetNames.includes('Sheet2') ? 'Sheet2' : workbook.SheetNames[0];
+    const proteinSheetName = workbook.SheetNames.includes('Sheet1') ? 'Sheet1' : workbook.SheetNames[0];
     const sheet = workbook.Sheets[proteinSheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
     const normalized = rows.map((r) => ({ ...r, _sheet: proteinSheetName }));
@@ -151,27 +178,38 @@
     const raw = String(value).trim();
     if (!raw || raw === '""') return [];
     return raw
-      .split(/[;,]+/)
+      .split(/[;|,]+/)
       .map((v) => v.trim())
       .filter((v) => v && v !== '""');
   }
 
   function getProteinTokensFromRow(row) {
-    // Protein profile in workbook lives in Sheet2 -> "Amino Acids".
-    // Fallback to Mutation when Amino Acids is blank.
-    const amino = splitMutationTokens(row['Amino Acids']);
-    if (amino.length) return amino;
-    return splitMutationTokens(row['Mutation']);
+    return splitMutationTokens(row['substitution info|insertion info']);
   }
 
-  function dateToMonthIndex(dateString) {
+  function toUtcDate(dateString) {
     if (!dateString) return null;
     const d = new Date(dateString);
     if (!(d instanceof Date) || isNaN(d)) return null;
-    // Workbook MonthIndex uses Jan-2020 => 1
-    const year = d.getUTCFullYear();
-    const month = d.getUTCMonth() + 1;
-    return (year - 2020) * 12 + month;
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  }
+
+  function rowToDate(row) {
+    const year = Number(row.Year);
+    const month = Number(row.Month);
+    const day = Number(row.Day);
+    if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+      return new Date(Date.UTC(year, month - 1, day));
+    }
+    if (row.Date) return toUtcDate(row.Date);
+    return null;
+  }
+
+  function readMutationQuery(container) {
+    if (!container) return [];
+    const textarea = container.querySelector('#desired-mutations');
+    if (!textarea) return [];
+    return splitMutationTokens(textarea.value).map((v) => v.toLowerCase());
   }
   // Variant data with actual mutation arrays from variant pages
   const variantData = {
@@ -502,19 +540,41 @@
         console.error('Search error', err);
       });
     }
+
+    const basicSearch = event.target.closest('#basicSearchButton');
+    if (basicSearch) {
+      const container = basicSearch.closest('#no-variants');
+      const from = document.getElementById('basicDateFrom')?.value || '';
+      const to = document.getElementById('basicDateTo')?.value || '';
+      const mode = document.getElementById('basicMutationMatch')?.value || 'any';
+      const mutations = readMutationQuery(container);
+      const summaryEl = document.getElementById('basicSearchSummary');
+      if (summaryEl) summaryEl.innerHTML = 'Searching... <span id="basicSearchProgressText">0%</span>';
+      performSearch('basic', mutations, mode, from, to, (pct) => {
+        const t = document.getElementById('basicSearchProgressText');
+        if (t) t.textContent = pct + '%';
+      }).then((results) => {
+        searchResults.basic = results;
+        if (summaryEl) summaryEl.textContent = `Search complete — ${results.length} sequences found.`;
+        renderSearchDownloads('basic', container, results, document.getElementById('basicSearchResults'));
+      }).catch((err) => {
+        if (summaryEl) summaryEl.textContent = 'Search failed.';
+        console.error('Basic search error', err);
+      });
+    }
   });
 </script>
 
 <script>
   async function performSearch(variantKey, selectedMutations, mode, from, to, onProgress) {
-    // Real workbook search using protein data in InputVariantsLMCM_20260118.xlsx (Sheet2)
+    // Real workbook search using the corrected workbook's substitution info|insertion info column
     const rows = await loadWorkbookRows();
     const total = rows.length;
     const results = [];
 
     const selToks = (selectedMutations || []).map(s => String(s || '').trim().toLowerCase()).filter(Boolean);
-    const fromMonth = dateToMonthIndex(from);
-    const toMonth = dateToMonthIndex(to);
+    const fromDate = toUtcDate(from);
+    const toDate = toUtcDate(to);
 
     for (let i = 0; i < total; i++) {
       const row = rows[i];
@@ -525,16 +585,16 @@
         await new Promise(r => setTimeout(r, 0));
       }
 
-      // Build token set from protein mutation profile columns
+      // Build token set from the corrected workbook mutation column
       const proteinTokens = getProteinTokensFromRow(row);
       const tokens = new Set(proteinTokens.map((t) => String(t).toLowerCase()));
 
-      // Date filtering via MonthIndex (Jan-2020 => 1)
-      if (fromMonth !== null || toMonth !== null) {
-        const m = Number(row['MonthIndex']);
-        if (!Number.isFinite(m)) continue;
-        if (fromMonth !== null && m < fromMonth) continue;
-        if (toMonth !== null && m > toMonth) continue;
+      // Date filtering via Year/Month/Day fields
+      if (fromDate || toDate) {
+        const rowDate = rowToDate(row);
+        if (!(rowDate instanceof Date) || isNaN(rowDate)) continue;
+        if (fromDate && rowDate < fromDate) continue;
+        if (toDate && rowDate > toDate) continue;
       }
 
       // Matching logic
@@ -545,8 +605,8 @@
 
       if (matched) {
         const id = row.id || row.ID || row.accession || row.sample || row.SampleID || row.Sample || `row${i+1}`;
-        const header = row.header || row.name || row['Variants'] || row['VarLabel'] || row.Sample || id;
-        const sequence = proteinTokens.join(';');
+        const header = row.header || row.name || row.EPI_ID || row.Sample || id;
+        const sequence = row.sequence || row.Sequence || '';
         results.push({ id, header, sequence, proteinTokens, row });
       }
     }
@@ -554,7 +614,7 @@
     return results;
   }
 
-  function renderSearchDownloads(variantKey, cardElement, results) {
+  function renderSearchDownloads(variantKey, cardElement, results, resultsTarget) {
     let container = cardElement.querySelector('.search-downloads');
     if (!container) {
       container = document.createElement('div');
@@ -573,7 +633,8 @@
 
     // preview panel for the first result row
     const previewContainerId = 'searchPreview-' + variantKey;
-    let prev = cardElement.querySelector('#' + previewContainerId);
+    const targetParent = resultsTarget || cardElement;
+    let prev = targetParent.querySelector('#' + previewContainerId);
     if (!prev) {
       prev = document.createElement('div');
       prev.id = previewContainerId;
@@ -583,7 +644,7 @@
       prev.style.background = '#fbfeff';
       prev.style.border = '1px solid #e6f6fb';
       prev.style.borderRadius = '8px';
-      cardElement.appendChild(prev);
+      targetParent.appendChild(prev);
     }
     if (!results || !results.length) {
       prev.innerHTML = '<em>No results to preview.</em>';
