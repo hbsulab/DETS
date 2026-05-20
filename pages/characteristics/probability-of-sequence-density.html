@@ -21,21 +21,11 @@
       <h2>Interpretation</h2>
       <p>Complementing the temporal aspect of viral evolution in terms of rate heterogeneity is the spatial information embedded in its sequence space. To uncover the patterns hidden within such a vast ensemble of sequences, we focused on the scaling behaviors of spike mutations.</p>
       <p>In this study, PSD <em>P(d)</em> denotes a probability distribution over the integral displacement <em>d</em> of a given sequence from its nearest ancestor in the sequence space.</p>
-      <p>The PSD workflow is part of the bifurcated analysis pipeline shown in <a href="#fig-1">Fig. 1</a>, where the PSD branch and LMCM branch are presented together.</p>
+      <p>The PSD workflow is part of a bifurcated analysis pipeline combining PSD and LMCM branches, which together highlight statistical and tensor-based perspectives on leading mutations across time.</p>
       <p>From the PSDs of the monthly non-degenerate sequence sets, we observed a linear scaling relationship between the quantities <em>P(d)</em> and <em>d</em>, which manifested itself across different time frames of the SARS-CoV-2 pandemic (<a href="#fig-3">Fig. 3a</a>). This scaling was highly robust, and was confirmed by the systematic examination of the log <em>P(d)</em>-log <em>d</em> plots for every month from January 2020 to December 2023.</p>
       <p>We further examined the dynamics of the scaling relationships between <em>P(d)</em> and <em>d</em>, from which we discovered an intriguing link between the time gradient of the log <em>P(d)</em>-log <em>d</em> slope, &Delta;(log <em>P(d)</em> / log <em>d</em>) / &Delta;<em>t</em>, and SARS-CoV-2 spike evolution.</p>
     </div>
 
-    <div class="visualization-block" id="fig-1">
-      <h3>Pipeline Overview</h3>
-      <div class="viz-placeholder">
-        <div class="pdf-render" data-pdf-render data-pdf-src="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig1_Overview+LMCM_new.pdf">
-          <p style="margin:12px;color:#5e7b8d;">Loading Figure 1...</p>
-        </div>
-        <p style="margin-top:8px;font-size:0.9em;color:#666;">If your browser cannot preview this figure, <a href="../../assets/data/2nd_Manuscript_PRR_Submission/Figures/Fig1_Overview+LMCM_new.pdf" target="_blank" rel="noopener noreferrer">open Figure 1 in a new tab</a>.</p>
-      </div>
-      <p style="margin-top:8px;font-size:0.9em;color:#666;"><strong>Figure 1.</strong> A statistical pipeline for deciphering the temporal mutation pattern of the SARS-CoV-2 spike glycoprotein. First, spike glycoprotein amino acid sequences downloaded from the Global Initiative on Sharing All Influenza Data (GISAID) hCoV-19 database are filtered and aligned to generate sets of non-degenerate sequences grouped by month. Then, these data sets are processed in two parallel steps. For PSD <em>P(d)</em> analysis, the log <em>P(d)</em>-log <em>d</em> slope of each monthly data set is computed, and its time gradient can serve as an early warning signal for the emergence of new variants. On the other hand, our leading mutations by the composite metric (LM<sup>CM</sup>) method integrates sequence, site, and amino acid (AA) data from Tucker decomposition of a mutation tensor, and pair correlation information of mutations, to outline a set of evolutionarily important mutations every month. The diagram of selected leading mutations (LMs) displays a subset of top LMs outlined across four intervals, juxtaposed with the reported mutations carried by representative variants that emerged by the end of each period. Circles or wedges colored blue correspond to mutations that increase hydrophilicity, whereas those colored red indicate the opposite effect. The complete set of LMs outlined each month can be found in Fig. S1.</p>
-    </div>
 
     <div class="visualization-block" id="fig-3">
       <h3>PSD Distribution</h3>
