@@ -89,6 +89,9 @@
           <option value="kp2">KP.2</option>
         </select>
         <button onclick="addVariant()">Add Variant</button>
+        <button id="export-aa-btn" style="margin-left:8px;" onclick="downloadSelectedVariantAA()">Download AA rows (CSV)</button>
+        <button id="export-aa-first10-btn" style="margin-left:6px;" onclick="downloadFirst10AA()">Download first 10 AA rows (test)</button>
+        <button id="export-fasta-btn" style="margin-left:4px;" onclick="downloadSelectedVariantSpikeFasta()">Download spike FASTA (NT)</button>
       </div>
 
       <div id="selected-variants-container"></div>
@@ -152,6 +155,154 @@
       s.onerror = reject;
       document.head.appendChild(s);
     });
+  }
+
+  // --- New: Variant export helpers ---
+  async function fetchText(path) {
+    const r = await fetch(path);
+    if (!r.ok) throw new Error('Failed to fetch ' + path);
+    return await r.text();
+  }
+
+  async function fetchBinary(path) {
+    const r = await fetch(path);
+    if (!r.ok) throw new Error('Failed to fetch ' + path);
+    return await r.arrayBuffer();
+  }
+
+  // Extract spike nucleotide sequence from Wuhan genome (1-based coords)
+  const SPIKE_START = 21563;
+  const SPIKE_END = 25384;
+
+  async function loadWuhanGenome() {
+    const txt = await fetchText('../assets/data/Wuhan.fasta');
+    const lines = txt.split(/\r?\n/);
+    const seq = lines.filter((l) => !l.startsWith('>')).join('').replace(/\s+/g,'');
+    return seq;
+  }
+
+  function parseRnaToken(tok) {
+    // Examples: C56T, T203-, A1841G
+    const m = String(tok || '').trim().match(/^([ACGT])([0-9]+)([ACGT-])$/i);
+    if (!m) return null;
+    return { ref: m[1].toUpperCase(), pos: Number(m[2]), alt: m[3].toUpperCase() };
+  }
+
+  function applyRnaMutationsToSeq(spikeSeq, tokens) {
+    if (!tokens || !tokens.length) return spikeSeq;
+    // parse ops, keep only valid
+    const ops = tokens.map(parseRnaToken).filter(Boolean);
+    // apply deletions/substitutions in descending order of pos
+    ops.sort((a,b) => b.pos - a.pos);
+    let arr = spikeSeq.split('');
+    for (const op of ops) {
+      const idx = op.pos - 1; // 1-based -> 0-based
+      if (idx < 0 || idx >= arr.length) continue;
+      if (op.alt === '-') {
+        // deletion
+        arr.splice(idx, 1);
+      } else {
+        // substitution
+        arr[idx] = op.alt;
+      }
+    }
+    return arr.join('');
+  }
+
+  function wrapSequence(seq, width = 60) {
+    const out = [];
+    for (let i = 0; i < seq.length; i += width) out.push(seq.slice(i, i + width));
+    return out.join('\n');
+  }
+
+  async function downloadSelectedVariantSpikeFasta() {
+    const sel = document.getElementById('variant-select');
+    const key = sel.value;
+    if (!key || !variantData[key]) return alert('Please select a variant first');
+    try {
+      const genome = await loadWuhanGenome();
+      const spike = genome.slice(SPIKE_START - 1, SPIKE_END); // inclusive
+      // load VariantsRNA.txt and map to variant
+      const vrnaTxt = await fetchText('../assets/data/VariantsRNA.txt');
+      const variantsMap = {};
+      vrnaTxt.split(/\r?\n/).forEach(line => {
+        const m = line.trim().match(/^\s*\d+\s+([^\s]+)\s+(.*)$/);
+        if (!m) return;
+        const name = m[1];
+        const muts = m[2].trim().replace(/^"|"$/g, '');
+        const norm = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        variantsMap[norm] = muts;
+      });
+      const keyNorm = (variantData[key].name || key).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const tokenStr = variantsMap[keyNorm] || '';
+      const tokens = tokenStr ? tokenStr.split(/;|,/) .map(s => s.trim()).filter(Boolean) : (variantData[key].rnaMutations || []);
+      const mutated = applyRnaMutationsToSeq(spike, tokens);
+      const header = `>${variantData[key].name} | nucleotide_mutations: ${tokens.join(';')}`;
+      const seqBody = wrapSequence(mutated, 60);
+      const blob = new Blob([header + '\n' + seqBody + '\n'], { type: 'text/plain;charset=utf-8' });
+      const fn = `${key}_spike_${new Date().toISOString().slice(0,10)}.fasta`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to build FASTA: ' + e.message);
+    }
+  }
+
+  async function downloadSelectedVariantAA() {
+    const sel = document.getElementById('variant-select');
+    const key = sel.value;
+    if (!key || !variantData[key]) return alert('Please select a variant first');
+    try {
+      await loadSheetJSLib();
+      const rows = await loadWorkbookRows(); // uses CorrectedData_AfterTimeCorrection.xlsx
+      const targetLabel = variantData[key].name.split(' ')[0].toLowerCase(); // 'Alpha' -> 'alpha'
+      // Filter rows where any cell equals the variant label (case-insensitive) or contains it
+      const filtered = rows.filter(r => {
+        return Object.values(r).some(v => {
+          const s = String(v || '').toLowerCase();
+          return s === targetLabel || s.includes(targetLabel);
+        });
+      });
+      const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(filtered));
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const fn = `${key}_AArows_${new Date().toISOString().slice(0,10)}.csv`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to extract AA rows: ' + e.message);
+    }
+  }
+
+  // Test helper: download first 10 rows from the corrected workbook as CSV
+  async function downloadFirst10AA() {
+    try {
+      await loadSheetJSLib();
+      const rows = await loadWorkbookRows();
+      const first10 = (rows || []).slice(0, 10);
+      const sheet = XLSX.utils.json_to_sheet(first10);
+      const csv = XLSX.utils.sheet_to_csv(sheet);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const fn = `Corrected_first10_${new Date().toISOString().slice(0,10)}.csv`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to download first 10 AA rows: ' + e.message);
+    }
   }
 
   // Cached workbook rows from the corrected workbook
