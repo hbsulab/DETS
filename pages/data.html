@@ -85,13 +85,13 @@
           <option value="delta">Delta (B.1.617.2)</option>
           <option value="ba2">Omicron BA.2</option>
           <option value="ba45">Omicron BA.4&5</option>
-          <option value="jn1">JN.1</option>
-          <option value="kp2">KP.2</option>
+          <option value="jn1">Omicron JN.1</option>
+          <option value="kp2">Omicron KP.2</option>
         </select>
-        <button onclick="addVariant()">Add Variant</button>
-        <button id="export-aa-btn" style="margin-left:8px;" onclick="downloadSelectedVariantAA()">Download AA rows (CSV)</button>
-        <button id="export-aa-first10-btn" style="margin-left:6px;" onclick="downloadFirst10AA()">Download first 10 AA rows (test)</button>
-        <button id="export-fasta-btn" style="margin-left:4px;" onclick="downloadSelectedVariantSpikeFasta()">Download spike FASTA (NT)</button>
+        <button style="margin-left:10px;" onclick="addVariant()">Add Variant</button>
+        <button id="export-aa-btn" style="margin-left:8px;" onclick="downloadSelectedVariantAA()">Download spike amino acid sequences (CSV)</button>
+        <!-- <button id="export-aa-first10-btn" style="margin-left:6px;" onclick="downloadFirst10AA()">Download first 10 AA rows (test)</button> -->
+        <button id="export-fasta-btn" style="margin-left:4px;" onclick="downloadSelectedVariantSpikeFasta()">Download spike base sequence (FASTA)</button>
       </div>
 
       <div id="selected-variants-container"></div>
