@@ -3,52 +3,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>DETS | v2 (hidden)</title>
+  <title>DETS | v2 (intranet)</title>
   <link rel="stylesheet" href="css/styles.css">
-
   <style>
     .variant-selector {
+      margin: 20px 0;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 15px;
       flex-wrap: wrap;
+      align-items: center;
     }
-    .remove-btn {
-      background: #ff6b6b;
+    .variant-selector label {
+      font-weight: 500;
+      margin-right: 10px;
+    }
+    .variant-selector select {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e0;
+      border-radius: 6px;
+      font-size: 1rem;
+      min-width: 250px;
+    }
+    .variant-selector button {
+      padding: 8px 20px;
+      background-color: #1b6c8a;
       color: white;
       border: none;
-     <div class="data-download-embed">
-      <div class="text-block">
-        <h2>Variant Sequence Download Tool</h2>
-        <p>Search protein sequences from the corrected workbook by date and desired mutations. Select variants only if you want to prefill or compare mutation filters; otherwise use the date and mutation search form below.</p>
-        
-        <div class="variant-selector">
-          <select id="variant-select">
-            <option value="">-- Select a variant --</option>
-            <option value="alpha">Alpha (B.1.1.7)</option>
-            <option value="beta">Beta (B.1.351)</option>
-            <option value="delta">Delta (B.1.617.2)</option>
-            <option value="ba2">Omicron BA.2</option>
-            <option value="ba45">Omicron BA.4&5</option>
-            <option value="jn1">Omicron JN.1</option>
-            <option value="kp2">Omicron KP.2</option>
-          </select>
-          <button style="margin-left:10px;" onclick="addVariant()">Add Variant</button>
-          <button id="export-aa-btn" style="margin-left:8px;" onclick="downloadSelectedVariantAA()">Download spike amino acid sequences (CSV)</button>
-          <button id="export-fasta-btn" style="margin-left:4px;" onclick="downloadSelectedVariantSpikeFasta()">Download spike base sequence (FASTA)</button>
-        </div>
-
-        <div id="selected-variants-container"></div>
-        <div id="no-variants" style="display:none;">
-          <p>No variants selected. Choose a variant above to get started.</p>
-        </div>
-      </div>
-    </div>
-ign: left;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
     }
-    .data-download-embed .page-header {
+    .variant-selector button:hover {
+      background-color: #154d6b;
+    }
+    .remove-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .remove-btn:hover {
+      background-color: #c0392b;
+    }
+    #no-variants {
       text-align: center;
+      padding: 40px 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+    .mutation-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #e7f4fa;
+      border: 1px solid #b3d9e8;
+      cursor: pointer;
+      font-size: 12px;
+      margin: 4px;
+      transition: all 0.2s;
+    }
+    .mutation-pill.is-active {
+      background: #155a74;
+      color: white;
+      border-color: #155a74;
+    }
+    .mutation-pill.domain-NTD {
+      background: #c8f5d0;
+    }
+    .mutation-pill.domain-RBD {
+      background: #ffd9b3;
+    }
+    .mutation-pill.domain-CTD {
+      background: #ffd0e6;
+    }
+    .mutation-pill.domain-S2 {
+      background: #cde7ff;
+    }
+    .download-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .download-toolbar div {
+      display: flex;
+      flex-direction: column;
+    }
+    .download-toolbar input,
+    .download-toolbar select {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e0;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .search-btn {
+      padding: 8px 20px;
+      background-color: #1b6c8a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .search-btn:hover {
+      background-color: #154d6b;
+    }
+    .sequence-note {
+      font-size: 0.95rem;
+      color: #666;
+      margin-top: 12px;
     }
   </style>
 </head>
@@ -60,7 +131,7 @@ ign: left;
 <div id="main_container">
   <div class="container">
     <div class="page-header">
-      <h1>v2 (hidden) — Global Snapshot & Data</h1>
+      <h1>v2 (intranet)</h1>
     </div>
 
     <div class="visualization-block">
@@ -84,21 +155,68 @@ ign: left;
       </div>
     </div>
 
-    <div class="page-header">
-      <h1>Data Download</h1>
+    <div class="text-block">
+      <h2>Variant Sequence Download Tool</h2>
+      <p>Search protein sequences from the corrected workbook by date and desired mutations. Select variants only if you want to prefill or compare mutation filters; otherwise use the date and mutation search form below.</p>
     </div>
 
-    <div class="visualization-block">
-      <h3>Data Download Tool</h3>
-      <iframe
-        src="pages/data.html"
-        title="Embedded Data Download Tool"
-        width="100%"
-        height="1600"
-        style="border: 1px solid #dbe7ef; border-radius: 12px; background: #ffffff;"
-        loading="lazy">
-      </iframe>
+    <div class="text-block">
+      <h3>Select Variants</h3>
+      <div class="variant-selector">
+        <label for="variant-select">Choose a variant:</label>
+        <select id="variant-select">
+          <option value="">-- Select a variant --</option>
+          <option value="alpha">Alpha (B.1.1.7)</option>
+          <option value="beta">Beta (B.1.351)</option>
+          <option value="delta">Delta (B.1.617.2)</option>
+          <option value="ba2">Omicron BA.2</option>
+          <option value="ba45">Omicron BA.4&5</option>
+          <option value="jn1">Omicron JN.1</option>
+          <option value="kp2">Omicron KP.2</option>
+        </select>
+        <button style="margin-left:10px;" onclick="addVariant()">Add Variant</button>
+        <button id="export-aa-btn" style="margin-left:8px;" onclick="downloadSelectedVariantAA()">Download spike amino acid sequences (CSV)</button>
+        <!-- <button id="export-aa-first10-btn" style="margin-left:6px;" onclick="downloadFirst10AA()">Download first 10 AA rows (test)</button> -->
+        <button id="export-fasta-btn" style="margin-left:4px;" onclick="downloadSelectedVariantSpikeFasta()">Download spike base sequence (FASTA)</button>
+      </div>
+
+      <div id="selected-variants-container"></div>
+      <div id="download-section-container"></div>
+
+      <div id="no-variants">
+        <div class="text-block" style="margin-top: 8px; margin-bottom: 0;">
+          <h4 style="margin-bottom: 12px; color: #165a74;">Search sequences without selecting a variant</h4>
+          <div class="download-toolbar" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom: 12px;">
+            <div>
+              <label for="basicDateFrom">Date from</label>
+              <input id="basicDateFrom" type="date" lang="en">
+            </div>
+            <div>
+              <label for="basicDateTo">Date to</label>
+              <input id="basicDateTo" type="date" lang="en">
+            </div>
+            <div style="flex: 1 1 320px; min-width: 260px;">
+              <label for="desired-mutations">Desired mutations</label>
+              <textarea id="desired-mutations" rows="3" placeholder="Enter mutations separated by commas or semicolons, e.g. H69-, V70-, D614G" style="width:100%; padding:10px 12px; border:1px solid #d0d7e0; border-radius:8px; font: inherit; resize: vertical;"></textarea>
+            </div>
+            <div>
+              <label for="basicMutationMatch">Mutation match</label>
+              <select id="basicMutationMatch">
+                <option value="any">ANY selected mutation</option>
+                <option value="all">ALL selected mutations</option>
+              </select>
+            </div>
+            <div style="align-self: end;">
+              <button type="button" id="basicSearchButton" class="btn search-btn">Search</button>
+            </div>
+          </div>
+          <p id="basicSearchSummary" class="sequence-note"></p>
+          <div id="basicSearchResults"></div>
+        </div>
+      </div>
     </div>
+
+    
 
     <div class="footnote-block">
       <h4>References</h4>
@@ -113,7 +231,6 @@ ign: left;
 <div id="footer-placeholder"></div>
 
 <script>
-
   // Load SheetJS (xlsx) via CDN for client-side workbook parsing
   function loadSheetJSLib() {
     return new Promise((resolve, reject) => {
@@ -594,9 +711,9 @@ ign: left;
   })();
 
   updateDisplay();
+</script>
 
-
-
+<script>
   function downloadFormat(format) {
     let content = '';
     const timestamp = new Date().toISOString().split('T')[0];
@@ -692,9 +809,9 @@ ign: left;
       });
     }
   });
+</script>
 
-
-
+<script>
   async function performSearch(variantKey, selectedMutations, mode, from, to, onProgress) {
     // Real workbook search using the corrected workbook's substitution info|insertion info column
     const rows = await loadWorkbookRows();
@@ -830,7 +947,6 @@ ign: left;
     el.click();
     document.body.removeChild(el);
   }
-
 </script>
 
 <script src="js/load-components.js?v=20260421-2"></script>

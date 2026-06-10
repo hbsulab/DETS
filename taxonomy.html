@@ -7,31 +7,54 @@
   <link rel="stylesheet" href="css/styles.css">
   <style>
     .variant-selector {
+      margin: 20px 0;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 15px;
       flex-wrap: wrap;
+      align-items: center;
     }
-    .remove-btn {
-      background: #ff6b6b;
+    .variant-selector label {
+      font-weight: 500;
+      margin-right: 10px;
+    }
+    .variant-selector select {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e0;
+      border-radius: 6px;
+      font-size: 1rem;
+      min-width: 250px;
+    }
+    .variant-selector button {
+      padding: 8px 20px;
+      background-color: #1b6c8a;
       color: white;
       border: none;
-      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .variant-selector button:hover {
+      background-color: #154d6b;
+    }
+    .remove-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
     }
     .remove-btn:hover {
-      background: #ff5252;
+      background-color: #c0392b;
     }
     #no-variants {
-      background: #f0f8ff;
-      border: 1px solid #d0e8ff;
-      border-radius: 8px;
-      padding: 20px;
       text-align: center;
-      color: #0066cc;
+      padding: 40px 20px;
+      background: #f9fafb;
+      border-radius: 8px;
     }
     .mutation-pill {
       display: inline-flex;
@@ -68,6 +91,42 @@
     .data-download-embed .page-header {
       text-align: center;
     }
+    .download-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .download-toolbar div {
+      display: flex;
+      flex-direction: column;
+    }
+    .download-toolbar input,
+    .download-toolbar select {
+      padding: 8px 12px;
+      border: 1px solid #d0d7e0;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .search-btn {
+      padding: 8px 20px;
+      background-color: #1b6c8a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .search-btn:hover {
+      background-color: #154d6b;
+    }
+    .sequence-note {
+      font-size: 0.95rem;
+      color: #666;
+      margin-top: 12px;
+    }
   </style>
 </head>
 <body>
@@ -91,16 +150,6 @@
     </div>
 
     <div class="visualization-block">
-      <h3>Data Download Tool</h3>
-      <iframe
-        src="pages/data.html"
-        title="Embedded Data Download Tool"
-        width="100%"
-        height="1600"
-        style="border: 1px solid #dbe7ef; border-radius: 12px; background: #ffffff;"
-        loading="lazy">
-      </iframe>
-    </div>
       <div class="data-download-embed">
         <div class="text-block">
           <h2>Variant Sequence Download Tool</h2>
@@ -124,23 +173,37 @@
 
           <div id="selected-variants-container"></div>
           <div id="no-variants" style="display:none;">
-            <p>No variants selected. Choose a variant above to get started.</p>
+            <div class="text-block" style="margin-top: 8px; margin-bottom: 0;">
+              <h4 style="margin-bottom: 12px; color: #165a74;">Search sequences without selecting a variant</h4>
+              <div class="download-toolbar">
+                <div>
+                  <label for="basicDateFrom">Date from</label>
+                  <input id="basicDateFrom" type="date" lang="en">
+                </div>
+                <div>
+                  <label for="basicDateTo">Date to</label>
+                  <input id="basicDateTo" type="date" lang="en">
+                </div>
+                <div style="flex: 1 1 320px; min-width: 260px;">
+                  <label for="desired-mutations">Desired mutations</label>
+                  <textarea id="desired-mutations" rows="3" placeholder="Enter mutations separated by commas or semicolons, e.g. H69-, V70-, D614G" style="width:100%; padding:10px 12px; border:1px solid #d0d7e0; border-radius:8px; font: inherit; resize: vertical;"></textarea>
+                </div>
+                <div>
+                  <label for="basicMutationMatch">Mutation match</label>
+                  <select id="basicMutationMatch">
+                    <option value="any">ANY selected mutation</option>
+                    <option value="all">ALL selected mutations</option>
+                  </select>
+                </div>
+                <div style="align-self: end;">
+                  <button type="button" id="basicSearchButton" class="btn search-btn">Search</button>
+                </div>
+              </div>
+              <p id="basicSearchSummary" class="sequence-note"></p>
+              <div id="basicSearchResults"></div>
+            </div>
           </div>
         </div>
-      </div>
-
-    <div class="subpage-grid">
-      <div class="text-block">
-        <h3>Alpha</h3>
-      </div>
-      <div class="text-block">
-        <h3>Beta</h3>
-      </div>
-      <div class="text-block">
-        <h3>Delta</h3>
-      </div>
-      <div class="text-block">
-        <h3>Omicron</h3>
       </div>
     </div>
 

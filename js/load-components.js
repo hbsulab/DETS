@@ -2450,7 +2450,9 @@ function initCladeNavigationLinks() {
   if (!cladeObjects.length) {
     return;
   }
-  const isTaxonomyPage = Boolean(document.querySelector('.subpage-grid .subpage-card[href]'));
+  // Detect taxonomy pages either by explicit subpage grid or by pathname
+  const isTaxonomyPage = Boolean(document.querySelector('.subpage-grid .subpage-card[href]')) ||
+    (typeof window !== 'undefined' && (window.location.pathname || '').toLowerCase().endsWith('/taxonomy.html'));
   const isVariantPage = document.body && document.body.dataset.pageKind === 'variant';
   const shouldHighlightLinkedNodes = isTaxonomyPage || isVariantPage;
 
@@ -2752,6 +2754,7 @@ function initTaxonomyCladeHoverHighlight() {
     alpha: ['20i (alpha, b.1.1.7)'],
     beta: ['20h (beta, b.1.351)'],
     delta: ['21a (delta, b.1.617.2)'],
+    'omicron': ['21m (omicron, b.1.1.529)'],
     'omicron-ba2': ['21l (omicron, ba.2)'],
     'omicron-ba45': ['22a (ba.4)', '22b (ba.5)'],
     jn1: ['24a (jn.1)'],
@@ -2969,6 +2972,25 @@ function initTaxonomyCladeHoverHighlight() {
   });
 
   cladeObject.addEventListener('load', () => {
+    // Auto-enable Omicron overview highlighting when this page is the Omicron index
+    try {
+      const pathname = (window.location.pathname || '').toLowerCase();
+      const isOmicronPage = pathname.endsWith('/pages/variants/omicron.html') || pathname.endsWith('/omicron.html');
+      if (isOmicronPage) {
+        ensureTaxonomyControls();
+        taxonomyActiveMode = 'descendants';
+        const controls = document.getElementById(controlsId);
+        if (controls) {
+          controls.querySelectorAll('button[data-clade-mode]').forEach((item) => {
+            item.classList.toggle('is-active', item.dataset.cladeMode === taxonomyActiveMode);
+          });
+        }
+        applyHighlightForPage('omicron');
+        // continue to allow hover-based behavior as well
+      }
+    } catch (e) {
+      // ignore
+    }
     const hoveredCard = document.querySelector('.subpage-grid .subpage-card[href]:hover');
     if (!hoveredCard) {
       clearHighlight(cladeObject.contentDocument);
@@ -2979,6 +3001,8 @@ function initTaxonomyCladeHoverHighlight() {
     if (pageKey) {
       applyHighlightForPage(pageKey);
     }
+
+      
   });
 
   clearHighlight(cladeObject.contentDocument);
