@@ -5,6 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DETS | Taxonomy</title>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .variant-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .remove-btn {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .remove-btn:hover {
+      background: #ff5252;
+    }
+    #no-variants {
+      background: #f0f8ff;
+      border: 1px solid #d0e8ff;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      color: #0066cc;
+    }
+    .mutation-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #e7f4fa;
+      border: 1px solid #b3d9e8;
+      cursor: pointer;
+      font-size: 12px;
+      margin: 4px;
+      transition: all 0.2s;
+    }
+    .mutation-pill.is-active {
+      background: #155a74;
+      color: white;
+      border-color: #155a74;
+    }
+    .mutation-pill.domain-NTD {
+      background: #c8f5d0;
+    }
+    .mutation-pill.domain-RBD {
+      background: #ffd9b3;
+    }
+    .mutation-pill.domain-CTD {
+      background: #ffd0e6;
+    }
+    .mutation-pill.domain-S2 {
+      background: #cde7ff;
+    }
+    .data-download-embed {
+      text-align: left;
+    }
+    .data-download-embed .page-header {
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
 
@@ -15,7 +79,6 @@
   <div class="container">
     <div class="page-header">
       <h1>Taxonomy</h1>
-      <p>Browse major SARS-CoV-2 variants and sublineages with mutation-focused summaries, structure context, and comparative notes.</p>
     </div>
 
     <div class="visualization-block">
@@ -37,19 +100,32 @@
         loading="lazy">
       </iframe>
     </div>
+      <div class="data-download-embed">
+        <div class="text-block">
+          <h2>Variant Sequence Download Tool</h2>
+          <p>Search protein sequences from the corrected workbook by date and desired mutations. Select variants only if you want to prefill or compare mutation filters; otherwise use the date and mutation search form below.</p>
+        
+          <div class="variant-selector">
+            <select id="variant-select">
+              <option value="">-- Select a variant --</option>
+              <option value="alpha">Alpha (B.1.1.7)</option>
+              <option value="beta">Beta (B.1.351)</option>
+              <option value="delta">Delta (B.1.617.2)</option>
+              <option value="ba2">Omicron BA.2</option>
+              <option value="ba45">Omicron BA.4&5</option>
+              <option value="jn1">Omicron JN.1</option>
+              <option value="kp2">Omicron KP.2</option>
+            </select>
+            <button style="margin-left:10px;" onclick="addVariant()">Add Variant</button>
+            <button id="export-aa-btn" style="margin-left:8px;" onclick="downloadSelectedVariantAA()">Download spike amino acid sequences (CSV)</button>
+            <button id="export-fasta-btn" style="margin-left:4px;" onclick="downloadSelectedVariantSpikeFasta()">Download spike base sequence (FASTA)</button>
+          </div>
 
-    <div class="subpage-grid">
-      <div class="text-block">
-        <h3>Alpha</h3>
-      </div>
-      <div class="text-block">
-        <h3>Beta</h3>
-      </div>
-      <div class="text-block">
-        <h3>Delta</h3>
-      </div>
-      <div class="text-block">
-        <h3>Omicron</h3>
+          <div id="selected-variants-container"></div>
+          <div id="no-variants" style="display:none;">
+            <p>No variants selected. Choose a variant above to get started.</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -84,6 +160,727 @@
 </div>
 
 <div id="footer-placeholder"></div>
+
+<script>
+
+  // Load SheetJS (xlsx) via CDN for client-side workbook parsing
+  function loadSheetJSLib() {
+    return new Promise((resolve, reject) => {
+      if (window.XLSX) return resolve(window.XLSX);
+      const s = document.createElement('script');
+      s.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+      s.onload = () => resolve(window.XLSX);
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  // --- New: Variant export helpers ---
+  async function fetchText(path) {
+    const r = await fetch(path);
+    if (!r.ok) throw new Error('Failed to fetch ' + path);
+    return await r.text();
+  }
+
+  async function fetchBinary(path) {
+    const r = await fetch(path);
+    if (!r.ok) throw new Error('Failed to fetch ' + path);
+    return await r.arrayBuffer();
+  }
+
+  // Extract spike nucleotide sequence from Wuhan genome (1-based coords)
+  const SPIKE_START = 21563;
+  const SPIKE_END = 25384;
+
+  async function loadWuhanGenome() {
+    const txt = await fetchText('assets/data/Wuhan.fasta');
+    const lines = txt.split(/\r?\n/);
+    const seq = lines.filter((l) => !l.startsWith('>')).join('').replace(/\s+/g,'');
+    return seq;
+  }
+
+  function parseRnaToken(tok) {
+    // Examples: C56T, T203-, A1841G
+    const m = String(tok || '').trim().match(/^([ACGT])([0-9]+)([ACGT-])$/i);
+    if (!m) return null;
+    return { ref: m[1].toUpperCase(), pos: Number(m[2]), alt: m[3].toUpperCase() };
+  }
+
+  function applyRnaMutationsToSeq(spikeSeq, tokens) {
+    if (!tokens || !tokens.length) return spikeSeq;
+    // parse ops, keep only valid
+    const ops = tokens.map(parseRnaToken).filter(Boolean);
+    // apply deletions/substitutions in descending order of pos
+    ops.sort((a,b) => b.pos - a.pos);
+    let arr = spikeSeq.split('');
+    for (const op of ops) {
+      const idx = op.pos - 1; // 1-based -> 0-based
+      if (idx < 0 || idx >= arr.length) continue;
+      if (op.alt === '-') {
+        // deletion
+        arr.splice(idx, 1);
+      } else {
+        // substitution
+        arr[idx] = op.alt;
+      }
+    }
+    return arr.join('');
+  }
+
+  function wrapSequence(seq, width = 60) {
+    const out = [];
+    for (let i = 0; i < seq.length; i += width) out.push(seq.slice(i, i + width));
+    return out.join('\n');
+  }
+
+  const aaExportPaths = {
+    alpha: 'assets/data/aa-exports/alpha.csv',
+    beta: 'assets/data/aa-exports/beta.csv',
+    delta: 'assets/data/aa-exports/delta.csv',
+    ba2: 'assets/data/aa-exports/ba2.csv',
+    jn1: 'assets/data/aa-exports/jn1.csv',
+    kp2: 'assets/data/aa-exports/kp2.csv'
+  };
+
+  const fastaExportPaths = {
+    alpha: 'assets/data/fasta-exports/alpha.fasta',
+    beta: 'assets/data/fasta-exports/beta.fasta',
+    delta: 'assets/data/fasta-exports/delta.fasta',
+    ba2: 'assets/data/fasta-exports/ba2.fasta',
+    ba45: 'assets/data/fasta-exports/ba45.fasta',
+    jn1: 'assets/data/fasta-exports/jn1.fasta',
+    kp2: 'assets/data/fasta-exports/kp2.fasta'
+  };
+
+  async function downloadSelectedVariantSpikeFasta() {
+    const sel = document.getElementById('variant-select');
+    const key = sel.value;
+    if (!key || !variantData[key]) return alert('Please select a variant first');
+    try {
+      const fastaPath = fastaExportPaths[key];
+      if (!fastaPath) {
+        alert('No FASTA export is available for this variant.');
+        return;
+      }
+      const response = await fetch(fastaPath);
+      if (!response.ok) throw new Error('Failed to fetch ' + fastaPath);
+      const blob = await response.blob();
+      const fn = `${key}_spike_${new Date().toISOString().slice(0,10)}.fasta`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to build FASTA: ' + e.message);
+    }
+  }
+
+  async function downloadSelectedVariantAA() {
+    const sel = document.getElementById('variant-select');
+    const key = sel.value;
+    if (!key || !variantData[key]) return alert('Please select a variant first');
+    try {
+      const csvPath = aaExportPaths[key];
+      if (!csvPath) {
+        alert('No AA rows are available for this variant in the Excel file.');
+        return;
+      }
+      const response = await fetch(csvPath);
+      if (!response.ok) throw new Error('Failed to fetch ' + csvPath);
+      const csv = await response.text();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const fn = `${key}_AArows_${new Date().toISOString().slice(0,10)}.csv`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to extract AA rows: ' + e.message);
+    }
+  }
+
+  // Test helper: download first 10 rows from the corrected workbook as CSV
+  async function downloadFirst10AA() {
+    const sel = document.getElementById('variant-select');
+    const key = sel.value;
+    if (!key || !variantData[key]) return alert('Please select a variant first');
+    const csvPath = aaExportPaths[key];
+    if (!csvPath) return alert('No AA rows are available for this variant in the Excel file.');
+    try {
+      const response = await fetch(csvPath);
+      if (!response.ok) throw new Error('Failed to fetch ' + csvPath);
+      const csvText = await response.text();
+      const lines = csvText.split(/\r?\n/).filter(Boolean);
+      const first10 = lines.slice(0, 11).join('\n');
+      const blob = new Blob([first10 + '\n'], { type: 'text/csv;charset=utf-8' });
+      const fn = `${key}_first10_${new Date().toISOString().slice(0,10)}.csv`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to download first 10 AA rows: ' + e.message);
+    }
+  }
+
+  // Cached workbook rows from the corrected workbook
+  let _workbookRows = null;
+  async function loadWorkbookRows() {
+    if (_workbookRows) return _workbookRows;
+    const xlsxPath = 'assets/data/CorrectedData_AfterTimeCorrection.xlsx';
+    await loadSheetJSLib();
+    const res = await fetch(xlsxPath);
+    if (!res.ok) throw new Error('Failed to fetch workbook');
+    const arrayBuffer = await res.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const proteinSheetName = workbook.SheetNames.includes('Sheet1') ? 'Sheet1' : workbook.SheetNames[0];
+    const sheet = workbook.Sheets[proteinSheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const normalized = rows.map((r) => ({ ...r, _sheet: proteinSheetName }));
+    _workbookRows = normalized;
+    return normalized;
+  }
+
+  function splitMutationTokens(value) {
+    if (value === null || value === undefined) return [];
+    const raw = String(value).trim();
+    if (!raw || raw === '""') return [];
+    return raw
+      .split(/[;|,]+/)
+      .map((v) => v.trim())
+      .filter((v) => v && v !== '""');
+  }
+
+  function getProteinTokensFromRow(row) {
+    return splitMutationTokens(row['substitution info|insertion info']);
+  }
+
+  function toUtcDate(dateString) {
+    if (!dateString) return null;
+    const d = new Date(dateString);
+    if (!(d instanceof Date) || isNaN(d)) return null;
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  }
+
+  function rowToDate(row) {
+    const year = Number(row.Year);
+    const month = Number(row.Month);
+    const day = Number(row.Day);
+    if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+      return new Date(Date.UTC(year, month - 1, day));
+    }
+    if (row.Date) return toUtcDate(row.Date);
+    return null;
+  }
+
+  function readMutationQuery(container) {
+    if (!container) return [];
+    const textarea = container.querySelector('#desired-mutations');
+    if (!textarea) return [];
+    return splitMutationTokens(textarea.value).map((v) => v.toLowerCase());
+  }
+  // Variant data with actual mutation arrays from variant pages
+  const variantData = {
+    alpha: {
+      name: "Alpha (B.1.1.7)",
+      proteinMutations: ["H69-", "V70-", "Y144-", "N501Y", "A570D", "D614G", "P681H", "T716I", "S982A", "D1118H"],
+      rnaMutations: ["T203-", "A204-", "C205-", "A206-", "T207-", "G208-", "T430-", "A431-", "T432-", "A1501T", "C1709A", "A1841G", "C2042A", "C2147T", "T2944G", "G3352C"]
+    },
+    beta: {
+      name: "Beta (B.1.351)",
+      proteinMutations: ["L18F", "D80A", "D215G", "L241-", "L242-", "A243-", "K417N", "E484K", "N501Y", "D614G", "A701V"],
+      rnaMutations: ["C52T", "A239C", "A644G", "T722-", "A723-", "C724-", "T725-", "T726-", "G727-", "C728-", "T729-", "T730-", "G1251T", "G1450A", "A1501T", "A1841G", "C2102T"]
+    },
+    delta: {
+      name: "Delta (B.1.617.2)",
+      proteinMutations: ["T19R", "L452R", "P681R", "D614G", "del157-158"],
+      rnaMutations: ["C56G", "G425A", "A467-", "G468-", "T469-", "T470-", "C471-", "A472-", "T1355G", "C1433A", "A1841G", "C2042G", "G2848A"]
+    },
+    ba2: {
+      name: "Omicron BA.2",
+      proteinMutations: ["T19I", "L24-", "P25-", "P26-", "A27S", "H69-", "V70-", "G142D", "V213E", "G339D", "S371L", "S373P", "S375F", "T376A", "D405N", "R408S", "K417N", "N440K", "G446S", "E484A", "Q493K", "Q498R", "N501Y", "Y505H", "T547K", "D614G", "H655Y", "N679K", "P681R", "N764K", "D796Y", "N856K", "Q954H", "N969K", "L981F"],
+      rnaMutations: ["C56T", "T71-", "A72-", "C73-", "C74-", "C75-", "C76-", "C77-", "T78-", "G79-", "G425A", "T638G", "G1016A", "C1112T", "T1117C", "C1124T", "A1126G", "G1213A", "A1224C", "G1251T", "T1320G", "G1430A", "C1433A", "A1451C", "A1478G", "A1493G", "A1501T", "T1513C", "A1841G", "C1963T", "T2037G", "C2042A", "C2292A", "G2386T", "A2862T", "T2907A", "C3438T"]
+    },
+    ba45: {
+      name: "Omicron BA.4&5",
+      proteinMutations: ["T19I", "L24-", "P25-", "P26-", "A27S", "H69-", "V70-", "G142D", "V213E", "G339D", "S371L", "S373P", "S375F", "T376A", "D405N", "R408S", "K417N", "N440K", "G446S", "E484A", "Q493K", "Q498R", "N501Y", "Y505H", "T547K", "D614G", "H655Y", "N679K", "P681R", "N764K", "D796Y", "N856K", "Q954H", "N969K", "L981F"],
+      rnaMutations: ["C56T", "T71-", "A72-", "C73-", "C74-", "C75-", "C76-", "C77-", "T78-", "G79-", "T203-", "A204-", "C205-", "A206-", "T207-", "G208-", "G425A", "T638G", "G1016A", "C1112T", "T1117C", "C1124T", "A1126G", "G1213A", "A1224C", "G1251T", "T1320G", "T1355G", "G1430A", "C1433A", "A1451C", "T1456G", "A1493G", "A1501T", "T1513C", "A1841G", "C1963T", "T2037G", "C2042A", "C2292A", "G2386T", "A2862T", "T2907A", "C3438T"]
+    },
+    jn1: {
+      name: "JN.1",
+      proteinMutations: ["T19I", "L24-", "P25-", "P26-", "A27S", "H69-", "V70-", "G142D", "V213E", "G339D", "S371L", "S373P", "S375F", "T376A", "D405N", "R408S", "K417N", "N440K", "G446S", "E484A", "Q493K", "Q498R", "N501Y", "Y505H", "T547K", "D614G", "H655Y", "N679K", "P681R", "N764K", "D796Y", "N856K", "Q954H", "N969K", "L981F"],
+      rnaMutations: ["C56T", "C60T", "G62C", "T71-", "A72-", "C73-", "C74-", "C75-", "C76-", "C77-", "T78-", "G79-", "C149T", "T203-", "A204-", "C205-", "A206-", "T207-", "G208-", "G379T", "G425A", "T430-", "A431-", "T432-", "T470C", "C471A", "A472G", "A632-", "T633-", "T634-", "T638G", "C646T", "C733A", "C791A", "A994G", "G1015C", "G1016A", "A1067C", "C1112T", "T1117C", "C1124T", "A1126G", "G1208A", "G1213A", "A1224C", "G1251T", "T1320G", "G1333C", "T1334A", "G1336A", "A1348G", "C1354T", "T1355G", "T1364C", "T1380A", "G1430A", "C1433A", "T1443A", "G1447A", "T1448-", "T1449-", "G1450-", "T1456C", "T1457C", "A1493G", "A1501T", "T1513C", "G1660A", "C1709T", "A1841G", "C1861T", "C1963T", "T2037G", "C2042G", "C2292A", "G2386T", "C2816T", "A2862T", "T2907A", "C3428T", "C3645T"]
+    },
+    kp2: {
+      name: "KP.2",
+      proteinMutations: ["T19I", "L24-", "P25-", "P26-", "A27S", "H69-", "V70-", "G142D", "V213E", "G339D", "S371L", "S373P", "S375F", "T376A", "D405N", "R408S", "K417N", "N440K", "G446S", "E484A", "Q493K", "Q498R", "N501Y", "Y505H", "T547K", "D614G", "H655Y", "N679K", "P681R", "N764K", "D796Y", "N856K", "Q954H", "N969K", "L981F"],
+      rnaMutations: ["C56T", "C60T", "G62C", "T71-", "A72-", "C73-", "C74-", "C75-", "C76-", "C77-", "T78-", "G79-", "C149T", "T203-", "A204-", "C205-", "A206-", "T207-", "G208-", "G379T", "G425A", "T430-", "A431-", "T432-", "T470C", "C471A", "A472G", "A632-", "T633-", "T634-", "T638G", "C646T", "C733A", "C791A", "A994G", "G1015C", "G1016A", "G1037C", "A1067C", "C1112T", "T1117C", "C1124T", "A1126G", "G1208A", "G1213A", "A1224C", "G1251T", "T1320G", "G1333C", "T1334A", "G1336A", "A1348G", "C1354T", "T1355G", "T1364C", "T1366C", "T1380A", "G1430A", "C1433A", "T1443A", "G1447A", "T1448-", "T1449-", "G1450-", "T1456C", "T1457C", "A1493G", "A1501T", "T1513C", "G1660A", "C1709T", "A1841G", "C1861T", "C1963T", "T2037G", "C2042G", "C2292A", "G2386T", "C2816T", "A2862T", "T2907A", "G3310T", "C3428T", "C3438T", "C3645T"]
+    }
+  };
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  let selectedVariants = [];
+  const searchResults = {}; // store per-variant search results after running search
+
+  function addVariant() {
+    const select = document.getElementById('variant-select');
+    const variantKey = select.value;
+    
+    if (!variantKey) {
+      alert('Please select a variant');
+      return;
+    }
+    
+    if (selectedVariants.includes(variantKey)) {
+      alert('This variant is already selected');
+      return;
+    }
+    
+    selectedVariants.push(variantKey);
+    select.value = '';
+    updateDisplay();
+  }
+
+  function removeVariant(variantKey) {
+    selectedVariants = selectedVariants.filter(v => v !== variantKey);
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const container = document.getElementById('selected-variants-container');
+    const noVariants = document.getElementById('no-variants');
+    
+    container.innerHTML = '';
+    
+    if (selectedVariants.length === 0) {
+      noVariants.style.display = 'block';
+      return;
+    }
+    
+    noVariants.style.display = 'none';
+
+    // Domain definitions
+    const domains = {
+      NTD: { min: 1, max: 305 },
+      RBD: { min: 319, max: 541 },
+      CTD: { min: 542, max: 685 },
+      S2: { min: 686, max: 2000 }
+    };
+
+    function mapTokenToDomain(token, isRna = false) {
+      if (!token) return null;
+      const m = String(token).match(/(\d{1,4})/);
+      if (!m) return null;
+      let pos = Number(m[1]);
+      if (isRna) {
+        pos = Math.ceil(pos / 3);
+      }
+      for (const [name, range] of Object.entries(domains)) {
+        if (pos >= range.min && pos <= range.max) return name;
+      }
+      return null;
+    }
+
+    function sortMutationsByPosition(list) {
+      return list.slice().sort((a, b) => {
+        const mA = String(a).match(/(\d{1,4})/);
+        const mB = String(b).match(/(\d{1,4})/);
+        const posA = mA ? Number(mA[1]) : Infinity;
+        const posB = mB ? Number(mB[1]) : Infinity;
+        return posA - posB;
+      });
+    }
+
+    function buildMutationPills(mutations, kind = 'protein') {
+      if (!mutations || !mutations.length) return '—';
+      return mutations.map((mutation) => {
+        const normalized = String(mutation || '').trim();
+        const isRna = kind === 'rna';
+        const domain = mapTokenToDomain(normalized, isRna) || 'CTD';
+        const cls = domain === 'NTD' ? 'domain-NTD' : domain === 'RBD' ? 'domain-RBD' : domain === 'S2' ? 'domain-S2' : 'domain-CTD';
+        return `<button type="button" class="mutation-pill ${cls}" aria-pressed="false" data-mutation-kind="${escapeHtml(kind)}" data-mutation-token="${escapeHtml(normalized)}" title="Toggle ${escapeHtml(kind)} filter ${escapeHtml(normalized)}">${escapeHtml(normalized)}</button>`;
+      }).join('');
+    }
+
+    // For each selected variant, create a card
+    selectedVariants.forEach(variantKey => {
+      const variant = variantData[variantKey];
+      
+      // Bucket and sort protein mutations
+      const proteinBuckets = { NTD: [], RBD: [], CTD: [], S2: [] };
+      (variant.proteinMutations || []).forEach(tok => {
+        const d = mapTokenToDomain(tok) || 'CTD';
+        proteinBuckets[d] = proteinBuckets[d] || [];
+        proteinBuckets[d].push(tok);
+      });
+      
+      // Bucket and sort RNA mutations
+      const rnaBuckets = { NTD: [], RBD: [], CTD: [], S2: [] };
+      (variant.rnaMutations || []).forEach(tok => {
+        const d = mapTokenToDomain(tok, true);
+        if (!d) return;
+        rnaBuckets[d] = rnaBuckets[d] || [];
+        rnaBuckets[d].push(tok);
+      });
+      
+      ['NTD', 'RBD', 'CTD', 'S2'].forEach((domain) => {
+        proteinBuckets[domain] = sortMutationsByPosition(proteinBuckets[domain]);
+        rnaBuckets[domain] = sortMutationsByPosition(rnaBuckets[domain]);
+      });
+
+      // Create card with simplified layout
+      const card = document.createElement('div');
+      card.className = 'text-block';
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h2>${escapeHtml(variant.name)}</h2>
+          <button class="remove-btn" onclick="removeVariant('${variantKey}')">Remove</button>
+        </div>
+        
+        <h3>Defining RNA and spike mutations</h3>
+        <div class="variant-pair-row">
+          <div class="text-block">
+            <h4>RNA mutations</h4>
+            <div class="comparison-grid">
+              ${['NTD','RBD','CTD','S2'].map((d) => `
+                <div class="comparison-card">
+                  <h4>${d}</h4>
+                  <div class="mutations-list">${buildMutationPills(rnaBuckets[d] || [], 'rna')}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="text-block">
+            <h4>Spike mutations</h4>
+            <div class="comparison-grid">
+              ${['NTD','RBD','CTD','S2'].map((d) => `
+                <div class="comparison-card">
+                  <h4>${d}</h4>
+                  <div class="mutations-list">${buildMutationPills(proteinBuckets[d] || [], 'protein')}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="download-toolbar" style="margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <div>
+            <label for="dateFrom-${variantKey}">Date from</label>
+            <input id="dateFrom-${variantKey}" type="date" lang="en">
+          </div>
+          <div>
+            <label for="dateTo-${variantKey}">Date to</label>
+            <input id="dateTo-${variantKey}" type="date" lang="en">
+          </div>
+          <div>
+            <label for="mutationMatch-${variantKey}">Mutation match</label>
+            <select id="mutationMatch-${variantKey}">
+              <option value="any">ANY selected mutation</option>
+              <option value="all">ALL selected mutations</option>
+            </select>
+          </div>
+          <div>
+            <button type="button" id="searchButton-${variantKey}" class="btn search-btn">Search</button>
+          </div>
+        </div>
+        <p class="sequence-note" id="searchSummary-${variantKey}">Choose a date range, toggle defining RNA/spike mutations, then press Search to preview.</p>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+    // After rendering selected variants, show global download section if any
+    const downloadContainer = document.getElementById('download-section-container');
+    if (selectedVariants.length > 0 && downloadContainer) {
+      const downloadHTML = `
+        <div class="download-section">
+          <h3>📥 Download Selected Variants</h3>
+          <p>Download combined sequence data for the selected ${selectedVariants.length} variant(s):</p>
+          <div class="download-buttons">
+            <button class="download-btn" onclick="downloadFormat('fasta')">Download FASTA (.fasta)</button>
+            <button class="download-btn" onclick="downloadFormat('csv')">Download CSV (.csv)</button>
+            <button class="download-btn" onclick="downloadFormat('json')">Download JSON (.json)</button>
+          </div>
+          <p style="font-size: 0.9rem; color: #666; margin-top: 15px;">
+            <strong>Note:</strong> Downloads are generated from the consensus mutations listed above. For complete genome sequences and accession numbers, please visit GISAID or NCBI directly.
+          </p>
+        </div>
+      `;
+      downloadContainer.innerHTML = downloadHTML;
+    } else if (downloadContainer) {
+      downloadContainer.innerHTML = '';
+    }
+
+    // Initialize display
+  (function handleUrlVariantParam() {
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      const v = params.get('variant');
+      if (v && variantData[v] && !selectedVariants.includes(v)) {
+        selectedVariants.push(v);
+      }
+    } catch (e) {
+      // ignore
+    }
+  })();
+
+  updateDisplay();
+
+
+
+  function downloadFormat(format) {
+    let content = '';
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `DETS_variants_${timestamp}.${format === 'fasta' ? 'fasta' : format === 'csv' ? 'csv' : 'json'}`;
+
+    if (format === 'fasta') {
+      selectedVariants.forEach(variantKey => {
+        const variant = variantData[variantKey];
+        content += `>${variant.name}\n`;
+        content += `Spike Mutations: ${variant.proteinMutations ? variant.proteinMutations.join(', ') : ''}\n`;
+        content += `RNA Mutations: ${variant.rnaMutations ? variant.rnaMutations.join(', ') : ''}\n\n`;
+      });
+    } else if (format === 'csv') {
+      content = 'Variant,Spike Mutations,RNA Mutations\n';
+      selectedVariants.forEach(variantKey => {
+        const variant = variantData[variantKey];
+        content += `"${variant.name}","${variant.proteinMutations ? variant.proteinMutations.join('; ') : ''}","${variant.rnaMutations ? variant.rnaMutations.join('; ') : ''}"\n`;
+      });
+    } else if (format === 'json') {
+      const data = selectedVariants.map(variantKey => ({
+        name: variantData[variantKey].name,
+        spikeMutations: variantData[variantKey].proteinMutations || [],
+        rnaMutations: variantData[variantKey].rnaMutations || []
+      }));
+      content = JSON.stringify(data, null, 2);
+    }
+
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  }
+
+  // Delegated click handlers for mutation pills and search buttons
+  document.addEventListener('click', (event) => {
+    const pill = event.target.closest('.mutation-pill');
+    if (pill) {
+      const pressed = pill.getAttribute('aria-pressed') === 'true';
+      pill.setAttribute('aria-pressed', pressed ? 'false' : 'true');
+      pill.classList.toggle('is-active', !pressed);
+      return;
+    }
+
+    const sb = event.target.closest('button[id^="searchButton-"]');
+    if (sb) {
+      const vkey = sb.id.replace('searchButton-', '');
+      const card = sb.closest('.text-block');
+      const selected = Array.from(card.querySelectorAll('.mutation-pill[aria-pressed="true"]')).map(b => b.dataset.mutationToken);
+      const mode = document.getElementById('mutationMatch-' + vkey)?.value || 'any';
+      const from = document.getElementById('dateFrom-' + vkey)?.value || '';
+      const to = document.getElementById('dateTo-' + vkey)?.value || '';
+      const summaryEl = document.getElementById('searchSummary-' + vkey);
+
+      // perform search with progress updates
+      if (summaryEl) {
+        summaryEl.innerHTML = 'Searching... <span id="searchProgressText-' + vkey + '">0%</span>';
+      }
+      performSearch(vkey, selected, mode, from, to, (pct) => {
+        const t = document.getElementById('searchProgressText-' + vkey);
+        if (t) t.textContent = pct + '%';
+      }).then((results) => {
+        searchResults[vkey] = results;
+        if (summaryEl) summaryEl.textContent = `Search complete — ${results.length} sequences found.`;
+        renderSearchDownloads(vkey, card, results);
+      }).catch((err) => {
+        if (summaryEl) summaryEl.textContent = 'Search failed.';
+        console.error('Search error', err);
+      });
+    }
+
+    const basicSearch = event.target.closest('#basicSearchButton');
+    if (basicSearch) {
+      const container = basicSearch.closest('#no-variants');
+      const from = document.getElementById('basicDateFrom')?.value || '';
+      const to = document.getElementById('basicDateTo')?.value || '';
+      const mode = document.getElementById('basicMutationMatch')?.value || 'any';
+      const mutations = readMutationQuery(container);
+      const summaryEl = document.getElementById('basicSearchSummary');
+      if (summaryEl) summaryEl.innerHTML = 'Searching... <span id="basicSearchProgressText">0%</span>';
+      performSearch('basic', mutations, mode, from, to, (pct) => {
+        const t = document.getElementById('basicSearchProgressText');
+        if (t) t.textContent = pct + '%';
+      }).then((results) => {
+        searchResults.basic = results;
+        if (summaryEl) summaryEl.textContent = `Search complete — ${results.length} sequences found.`;
+        renderSearchDownloads('basic', container, results, document.getElementById('basicSearchResults'));
+      }).catch((err) => {
+        if (summaryEl) summaryEl.textContent = 'Search failed.';
+        console.error('Basic search error', err);
+      });
+    }
+  });
+
+
+
+  async function performSearch(variantKey, selectedMutations, mode, from, to, onProgress) {
+    // Real workbook search using the corrected workbook's substitution info|insertion info column
+    const rows = await loadWorkbookRows();
+    const total = rows.length;
+    const results = [];
+
+    const selToks = (selectedMutations || []).map(s => String(s || '').trim().toLowerCase()).filter(Boolean);
+    const fromDate = toUtcDate(from);
+    const toDate = toUtcDate(to);
+
+    for (let i = 0; i < total; i++) {
+      const row = rows[i];
+      // progress callback occasionally
+      if (i % Math.max(1, Math.floor(total / 20)) === 0) {
+        const pct = Math.floor((i / total) * 100 * 0.9);
+        if (typeof onProgress === 'function') onProgress(pct);
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      // Build token set from the corrected workbook mutation column
+      const proteinTokens = getProteinTokensFromRow(row);
+      const tokens = new Set(proteinTokens.map((t) => String(t).toLowerCase()));
+
+      // Date filtering via Year/Month/Day fields
+      if (fromDate || toDate) {
+        const rowDate = rowToDate(row);
+        if (!(rowDate instanceof Date) || isNaN(rowDate)) continue;
+        if (fromDate && rowDate < fromDate) continue;
+        if (toDate && rowDate > toDate) continue;
+      }
+
+      // Matching logic
+      let matched = false;
+      if (!selToks.length) matched = true;
+      else if (mode === 'all') matched = selToks.every(t => tokens.has(t));
+      else matched = selToks.some(t => tokens.has(t));
+
+      if (matched) {
+        const id = row.id || row.ID || row.accession || row.sample || row.SampleID || row.Sample || `row${i+1}`;
+        const header = row.header || row.name || row.EPI_ID || row.Sample || id;
+        const sequence = row.sequence || row.Sequence || '';
+        results.push({ id, header, sequence, proteinTokens, row });
+      }
+    }
+    if (typeof onProgress === 'function') onProgress(100);
+    return results;
+  }
+
+  function renderSearchDownloads(variantKey, cardElement, results, resultsTarget) {
+    let container = cardElement.querySelector('.search-downloads');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'search-downloads';
+      container.style.marginTop = '12px';
+      cardElement.appendChild(container);
+    }
+    container.innerHTML = `
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <strong>Download search results:</strong>
+        <button class="download-btn" onclick="downloadSearchResults('${variantKey}','fasta')">FASTA</button>
+        <button class="download-btn" onclick="downloadSearchResults('${variantKey}','csv')">CSV</button>
+        <button class="download-btn" onclick="downloadSearchResults('${variantKey}','json')">JSON</button>
+      </div>
+    `;
+
+    // preview panel for the first result row
+    const previewContainerId = 'searchPreview-' + variantKey;
+    const targetParent = resultsTarget || cardElement;
+    let prev = targetParent.querySelector('#' + previewContainerId);
+    if (!prev) {
+      prev = document.createElement('div');
+      prev.id = previewContainerId;
+      prev.className = 'search-preview';
+      prev.style.marginTop = '12px';
+      prev.style.padding = '12px';
+      prev.style.background = '#fbfeff';
+      prev.style.border = '1px solid #e6f6fb';
+      prev.style.borderRadius = '8px';
+      targetParent.appendChild(prev);
+    }
+    if (!results || !results.length) {
+      prev.innerHTML = '<em>No results to preview.</em>';
+      return;
+    }
+    const first = results[0];
+    // render row keys/values if present
+    if (first.row && typeof first.row === 'object') {
+      const entries = Object.entries(first.row).slice(0, 40);
+      prev.innerHTML = `<strong>First result preview: ${escapeHtml(String(first.id || first.header || ''))}</strong>`;
+      const t = document.createElement('table');
+      t.className = 'data-table';
+      const tbody = document.createElement('tbody');
+      entries.forEach(([k,v]) => {
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        th.textContent = k;
+        const td = document.createElement('td');
+        td.textContent = String(v);
+        tr.appendChild(th);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      });
+      t.appendChild(tbody);
+      prev.appendChild(t);
+    } else {
+      prev.innerHTML = `<pre>${escapeHtml(JSON.stringify(first, null, 2))}</pre>`;
+    }
+  }
+
+  function downloadSearchResults(variantKey, format) {
+    const results = searchResults[variantKey] || [];
+    if (!results.length) return alert('No search results to download.');
+    const timestamp = new Date().toISOString().split('T')[0];
+    let content = '';
+    let filename = `DETS_${variantKey}_search_${timestamp}.${format}`;
+    if (format === 'fasta') {
+      results.forEach(r => {
+        content += `>${r.header}\n`;
+        content += `${r.sequence}\n`;
+      });
+    } else if (format === 'csv') {
+      content = 'id,header,sequence\n';
+      results.forEach(r => {
+        content += `"${r.id}","${r.header}","${r.sequence}"\n`;
+      });
+    } else if (format === 'json') {
+      content = JSON.stringify(results, null, 2);
+    }
+    const el = document.createElement('a');
+    el.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(content);
+    el.download = filename;
+    document.body.appendChild(el);
+    el.click();
+    document.body.removeChild(el);
+  }
+
+</script>
 
 <script src="js/load-components.js?v=20260421-2"></script>
 </body>
