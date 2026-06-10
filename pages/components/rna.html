@@ -59,12 +59,22 @@
     </div>
 
     <div class="visualization-block">
-      <h3>Reference Wuhan genome sequence</h3>
+      <h3>Download Variant Data</h3>
       <div class="feature-panel">
-        <p>The Wuhan reference genome (EPI_ISL_402123) is provided below as the nucleotide FASTA baseline for RNA-level analyses on this page.</p>
-        <pre class="sequence-viewer" id="wuhan-sequence-viewer" style="white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; text-align: left; width: 100%; max-width: 820px; margin: 0 auto;">Loading Wuhan FASTA...</pre>
-        <div class="button-row">
-          <a href="../../assets/data/Wuhan.fasta" download>Download Wuhan FASTA</a>
+        <p>Select a variant to download RNA FASTA sequence data:</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 15px 0;">
+          <label for="rna-variant-select" style="font-weight: 500;">Choose variant:</label>
+          <select id="rna-variant-select" style="padding: 8px 12px; border: 1px solid #d0d7e0; border-radius: 6px;">
+            <option value="">-- Select a variant --</option>
+            <option value="alpha">Alpha (B.1.1.7)</option>
+            <option value="beta">Beta (B.1.351)</option>
+            <option value="delta">Delta (B.1.617.2)</option>
+            <option value="ba2">Omicron BA.2</option>
+            <option value="ba45">Omicron BA.4&5</option>
+            <option value="jn1">Omicron JN.1</option>
+            <option value="kp2">Omicron KP.2</option>
+          </select>
+          <button onclick="downloadRnaVariantFasta()" style="padding: 8px 16px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">Download FASTA</button>
         </div>
       </div>
     </div>
@@ -104,6 +114,52 @@ fetch("../../assets/data/Wuhan.fasta")
       viewer.textContent = "Unable to load Wuhan FASTA in-page. Please use the download button above.";
     }
   });
+
+// Download functions for variant data
+async function downloadRnaVariantFasta() {
+  const sel = document.getElementById('rna-variant-select');
+  const key = sel.value;
+  if (!key) return alert('Please select a variant first');
+  try {
+    const fastaPath = `../../assets/data/fasta-exports/${key}.fasta`;
+    const response = await fetch(fastaPath);
+    if (!response.ok) throw new Error('Failed to fetch ' + fastaPath);
+    const blob = await response.blob();
+    const fn = `${key}_spike_${new Date().toISOString().slice(0,10)}.fasta`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fn;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    console.error(e);
+    alert('Failed to download FASTA: ' + e.message);
+  }
+}
+
+async function downloadRnaVariantCsv() {
+  const sel = document.getElementById('rna-variant-select');
+  const key = sel.value;
+  if (!key) return alert('Please select a variant first');
+  try {
+    const csvPath = `../../assets/data/aa-exports/${key}.csv`;
+    const response = await fetch(csvPath);
+    if (!response.ok) throw new Error('Failed to fetch ' + csvPath);
+    const csv = await response.text();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const fn = `${key}_AArows_${new Date().toISOString().slice(0,10)}.csv`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fn;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    console.error(e);
+    alert('Failed to download CSV: ' + e.message);
+  }
+}
 </script>
 </body>
 </html>

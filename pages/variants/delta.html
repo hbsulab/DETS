@@ -37,6 +37,16 @@
     </div>
 
     <div class="text-block">
+      <h2>Download Variant Sequences</h2>
+      <p><strong>Quick download:</strong> Download Delta spike sequences directly:</p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+        <button style="padding: 8px 16px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" onclick="downloadDeltaAminoAcid()">Download spike amino acid sequences (CSV)</button>
+        <button style="padding: 8px 16px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" onclick="downloadDeltaFasta()">Download spike base sequence (FASTA)</button>
+      </div>
+      <p style="margin-top: 12px; font-size: 0.95rem; color: #666;"><strong>Advanced search:</strong> <a href="../../v2.html?variant=delta">Go to Data tool for Delta variant with mutation and date filtering</a>.</p>
+    </div>
+
+    <div class="text-block">
       <h2>Defining Mutations</h2>
       <p><strong>Spike Protein Mutations:</strong></p>
       <ul style="margin-left: 20px;">
@@ -180,5 +190,45 @@
 </script>
 
 <script src="../../js/load-components.js?v=20260421-2"></script>
+<script>
+async function downloadDeltaAminoAcid() {
+  try {
+    const csvPath = '../../assets/data/aa-exports/delta.csv';
+    const response = await fetch(csvPath);
+    if (!response.ok) throw new Error('Failed to fetch ' + csvPath);
+    const csv = await response.text();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const fn = `delta_AArows_${new Date().toISOString().slice(0,10)}.csv`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fn;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    console.error(e);
+    alert('Failed to download CSV: ' + e.message);
+  }
+}
+
+async function downloadDeltaFasta() {
+  try {
+    const fastaPath = '../../assets/data/fasta-exports/delta.fasta';
+    const response = await fetch(fastaPath);
+    if (!response.ok) throw new Error('Failed to fetch ' + fastaPath);
+    const blob = await response.blob();
+    const fn = `delta_spike_${new Date().toISOString().slice(0,10)}.fasta`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fn;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    console.error(e);
+    alert('Failed to download FASTA: ' + e.message);
+  }
+}
+</script>
 </body>
 </html>

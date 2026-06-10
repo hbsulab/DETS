@@ -91,6 +91,16 @@
       <p class="clade-note">Source: <a href="https://covariants.org/" target="_blank" rel="noopener noreferrer">CoVariants</a>.</p>
     </div>
 
+    <div class="text-block">
+      <h2>Download Variant Sequences</h2>
+      <p><strong>Quick download:</strong> Download JN.1 spike sequences directly:</p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+        <button style="padding: 8px 16px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" onclick="downloadJN1AminoAcid()">Download spike amino acid sequences (CSV)</button>
+        <button style="padding: 8px 16px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" onclick="downloadJN1Fasta()">Download spike base sequence (FASTA)</button>
+      </div>
+      <p style="margin-top: 12px; font-size: 0.95rem; color: #666;"><strong>Advanced search:</strong> <a href="../../v2.html?variant=jn1">Go to Data tool for JN.1 variant with mutation and date filtering</a>.</p>
+    </div>
+
     <div class="visualization-block omicron-evolution-figures">
       <div class="viz-placeholder omicron-figures-row">
         <img src="../../assets/images/deLemus/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" />
@@ -320,5 +330,45 @@
 </script>
 
 <script src="../../js/load-components.js?v=20260421-2"></script>
+<script>
+async function downloadJN1AminoAcid() {
+  try {
+    const csvPath = '../../assets/data/aa-exports/jn1.csv';
+    const response = await fetch(csvPath);
+    if (!response.ok) throw new Error('Failed to fetch ' + csvPath);
+    const csv = await response.text();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const fn = `jn1_AArows_${new Date().toISOString().slice(0,10)}.csv`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fn;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    console.error(e);
+    alert('Failed to download CSV: ' + e.message);
+  }
+}
+
+async function downloadJN1Fasta() {
+  try {
+    const fastaPath = '../../assets/data/fasta-exports/jn1.fasta';
+    const response = await fetch(fastaPath);
+    if (!response.ok) throw new Error('Failed to fetch ' + fastaPath);
+    const blob = await response.blob();
+    const fn = `jn1_spike_${new Date().toISOString().slice(0,10)}.fasta`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fn;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    console.error(e);
+    alert('Failed to download FASTA: ' + e.message);
+  }
+}
+</script>
 </body>
 </html>

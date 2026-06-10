@@ -26,30 +26,39 @@
       <p class="clade-note">Source: <a href="https://covariants.org/" target="_blank" rel="noopener noreferrer">CoVariants</a>.</p>
     </div>
 
-    <div class="visualization-block omicron-evolution-figures">
-      <div class="viz-placeholder omicron-figures-row">
-        <img src="assets/images/deLemus/General_info/GI1.png" alt="Evolution of Omicron Subvariants Part I" />
-        <img src="assets/images/deLemus/General_info/GI2.png" alt="Evolution of Omicron Subvariants Part II" />
+    <div class="text-block">
+      <h2>Download Variant Data</h2>
+      <p>Select variants below to download spike sequences (FASTA format) and corresponding amino-acid mutation data (CSV format):</p>
+      <div class="variant-selector" style="margin: 20px 0; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+        <label for="taxonomy-variant-select" style="font-weight: 500; margin-right: 10px;">Choose a variant:</label>
+        <select id="taxonomy-variant-select" style="padding: 8px 12px; border: 1px solid #d0d7e0; border-radius: 6px; font-size: 1rem; min-width: 250px;">
+          <option value="">-- Select a variant --</option>
+          <option value="alpha">Alpha (B.1.1.7)</option>
+          <option value="beta">Beta (B.1.351)</option>
+          <option value="delta">Delta (B.1.617.2)</option>
+          <option value="ba2">Omicron BA.2</option>
+          <option value="ba45">Omicron BA.4&5</option>
+          <option value="jn1">Omicron JN.1</option>
+          <option value="kp2">Omicron KP.2</option>
+        </select>
+        <button style="margin-left:10px; padding: 8px 20px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" onclick="addTaxonomyVariant()">Add Variant</button>
       </div>
+      <div id="taxonomy-selected-variants-container"></div>
     </div>
 
     <div class="subpage-grid">
-      <a class="subpage-card" href="pages/variants/alpha.html">
+      <div class="text-block">
         <h3>Alpha</h3>
-        <p>Early high-growth lineage with key spike substitutions and global replacement history.</p>
-      </a>
-      <a class="subpage-card" href="pages/variants/beta.html">
+      </div>
+      <div class="text-block">
         <h3>Beta</h3>
-        <p>Immune-escape-relevant variant with a defining RBD substitution constellation.</p>
-      </a>
-      <a class="subpage-card" href="pages/variants/delta.html">
+      </div>
+      <div class="text-block">
         <h3>Delta</h3>
-        <p>High-fitness lineage associated with major global waves before Omicron-era transitions.</p>
-      </a>
-      <a class="subpage-card" href="pages/variants/omicron.html">
+      </div>
+      <div class="text-block">
         <h3>Omicron</h3>
-        <p>Complex ecosystem of subvariants (BA.2, BA.4&5, JN.1, KP.2) with comparative mutation analysis and phylogenetic context.</p>
-      </a>
+      </div>
     </div>
 
     <div class="data-table-wrapper">
@@ -85,5 +94,65 @@
 <div id="footer-placeholder"></div>
 
 <script src="js/load-components.js?v=20260421-2"></script>
+<script>
+let taxonomySelectedVariants = [];
+
+const aaExportPaths = {
+  alpha: 'assets/data/aa-exports/alpha.csv',
+  beta: 'assets/data/aa-exports/beta.csv',
+  delta: 'assets/data/aa-exports/delta.csv',
+  ba2: 'assets/data/aa-exports/ba2.csv',
+  jn1: 'assets/data/aa-exports/jn1.csv',
+  kp2: 'assets/data/aa-exports/kp2.csv'
+};
+
+const fastaExportPaths = {
+  alpha: 'assets/data/fasta-exports/alpha.fasta',
+  beta: 'assets/data/fasta-exports/beta.fasta',
+  delta: 'assets/data/fasta-exports/delta.fasta',
+  ba2: 'assets/data/fasta-exports/ba2.fasta',
+  ba45: 'assets/data/fasta-exports/ba45.fasta',
+  jn1: 'assets/data/fasta-exports/jn1.fasta',
+  kp2: 'assets/data/fasta-exports/kp2.fasta'
+};
+
+function addTaxonomyVariant() {
+  const sel = document.getElementById('taxonomy-variant-select');
+  const key = sel.value;
+  if (!key) return alert('Please select a variant');
+  if (taxonomySelectedVariants.includes(key)) return alert('This variant is already selected');
+  taxonomySelectedVariants.push(key);
+  sel.value = '';
+  updateTaxonomyDisplay();
+}
+
+function removeTaxonomyVariant(key) {
+  taxonomySelectedVariants = taxonomySelectedVariants.filter(v => v !== key);
+  updateTaxonomyDisplay();
+}
+
+function updateTaxonomyDisplay() {
+  const container = document.getElementById('taxonomy-selected-variants-container');
+  container.innerHTML = '';
+  if (taxonomySelectedVariants.length === 0) return;
+  
+  taxonomySelectedVariants.forEach(key => {
+    const div = document.createElement('div');
+    div.className = 'text-block';
+    div.style.marginTop = '12px';
+    div.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <strong>${key}</strong>
+        <button style="background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 500;" onclick="removeTaxonomyVariant('${key}')">Remove</button>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button style="padding: 8px 16px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" onclick="(async ()=>{try{const r=await fetch(aaExportPaths['${key}']); const t=await r.text(); const b=new Blob([t],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='${key}_AArows.csv'; document.body.appendChild(a); a.click(); a.remove();}catch(e){alert(e)} })()">Download CSV</button>
+        <button style="padding: 8px 16px; background-color: #1b6c8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" onclick="(async ()=>{try{const r=await fetch(fastaExportPaths['${key}']); const b=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='${key}_spike.fasta'; document.body.appendChild(a); a.click(); a.remove();}catch(e){alert(e)} })()">Download FASTA</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+</script>
 </body>
 </html>

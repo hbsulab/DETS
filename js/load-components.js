@@ -1640,7 +1640,7 @@ function renderVariantWidget(pageKey) {
       </div>
       <div class="button-row">
         <button type="button" id="searchButton-${pageKey}">Search</button>
-        <a class="more-link" style="margin-left:12px; align-self:center;" href="${getResourcePrefix()}pages/data.html?variant=${encodeURIComponent(String(pageKey).replace(/^omicron-/, ''))}">Open in Data →</a>
+        <a class="more-link" style="margin-left:12px; align-self:center;" href="${getResourcePrefix()}v2.html?variant=${encodeURIComponent(String(pageKey).replace(/^omicron-/, ''))}">Open in Data →</a>
       </div>
       <p class="sequence-note">Choose a date range, toggle defining RNA/spike mutations, then press Search to preview the first matching sequence.</p>
     `;
