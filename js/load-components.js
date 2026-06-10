@@ -2460,6 +2460,7 @@ function initCladeNavigationLinks() {
     { tokens: ['20i (alpha, b.1.1.7)'], href: 'pages/variants/alpha.html' },
     { tokens: ['20h (beta, b.1.351)'], href: 'pages/variants/beta.html' },
     { tokens: ['21a (delta, b.1.617.2)', '21i (delta)', '21j (delta)'], href: 'pages/variants/delta.html' },
+    { tokens: ['21m (omicron, b.1.1.529)'], href: 'pages/variants/omicron.html' },
     { tokens: ['21l (omicron, ba.2)'], href: 'pages/variants/omicron-ba2.html' },
     { tokens: ['22a (ba.4)', '22b (ba.5)'], href: 'pages/variants/omicron-ba45.html' },
     { tokens: ['24a (jn.1)'], href: 'pages/variants/jn1.html' },
@@ -3039,6 +3040,9 @@ function initVariantCladeFigureHighlight(pageKey) {
   }
 
   const cladePathConfigByPage = {
+    omicron: {
+      focusTokens: ['21m (omicron, b.1.1.529)']
+    },
     alpha: {
       focusTokens: ['20i (alpha, b.1.1.7)']
     },
