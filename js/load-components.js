@@ -614,15 +614,89 @@ function renderSequenceComparison(referenceSequence, variantSequence, options = 
 function buildMutationPills(mutations, options = {}) {
   const clickable = Boolean(options.clickable);
   const mutationKind = options.kind || 'protein';
+  const forcedDomain = options.domain || '';
   return mutations.map((mutation) => {
     const normalized = String(mutation || '').trim();
+    const domain = forcedDomain || mapMutationTokenToDomain(normalized, mutationKind === 'rna');
+    const domainClass = domain ? ` domain-${domain}` : '';
 
     if (clickable) {
-      return `<button type="button" class="mutation-pill" aria-pressed="false" data-mutation-kind="${escapeHtml(mutationKind)}" data-mutation-token="${escapeHtml(normalized)}" title="Toggle ${escapeHtml(mutationKind)} filter ${escapeHtml(normalized)}">${escapeHtml(normalized)}</button>`;
+      return `<button type="button" class="mutation-pill${domainClass}" aria-pressed="false" data-mutation-kind="${escapeHtml(mutationKind)}" data-mutation-token="${escapeHtml(normalized)}" title="Toggle ${escapeHtml(mutationKind)} filter ${escapeHtml(normalized)}">${escapeHtml(normalized)}</button>`;
     }
 
-    return `<span class="mutation-pill">${escapeHtml(normalized)}</span>`;
+    return `<span class="mutation-pill${domainClass}">${escapeHtml(normalized)}</span>`;
   }).join('');
+}
+
+function mapMutationTokenToDomain(token, isRna = false) {
+  if (!token) return '';
+  const domains = {
+    NTD: { min: 1, max: 305 },
+    RBD: { min: 319, max: 541 },
+    CTD: { min: 542, max: 685 },
+    S2: { min: 686, max: 2000 }
+  };
+
+  const match = String(token).match(/(\d{1,4})/);
+  if (!match) return '';
+
+  let position = Number(match[1]);
+  if (isRna) {
+    position = Math.ceil(position / 3);
+  }
+
+  for (const [domain, range] of Object.entries(domains)) {
+    if (position >= range.min && position <= range.max) {
+      return domain;
+    }
+  }
+
+  return '';
+}
+
+function sortMutationTokensByPosition(tokens) {
+  return [...tokens].sort((left, right) => {
+    const leftMatch = String(left).match(/(\d{1,4})/);
+    const rightMatch = String(right).match(/(\d{1,4})/);
+    const leftPos = leftMatch ? Number(leftMatch[1]) : Number.POSITIVE_INFINITY;
+    const rightPos = rightMatch ? Number(rightMatch[1]) : Number.POSITIVE_INFINITY;
+    return leftPos - rightPos;
+  });
+}
+
+function bucketMutationTokensByDomain(tokens, isRna = false) {
+  const buckets = { NTD: [], RBD: [], CTD: [], S2: [] };
+  (tokens || []).forEach((token) => {
+    const domain = mapMutationTokenToDomain(token, isRna) || 'CTD';
+    buckets[domain].push(token);
+  });
+
+  Object.keys(buckets).forEach((domain) => {
+    buckets[domain] = sortMutationTokensByPosition(buckets[domain]);
+  });
+
+  return buckets;
+}
+
+function getVariantUnfilteredExportPath(exportKind, exportKey) {
+  const key = String(exportKey || '').trim();
+  if (!key) return '';
+
+  if (exportKind === 'aa') {
+    if (!['alpha', 'beta', 'delta', 'ba2', 'jn1', 'kp2'].includes(key)) return '';
+    return `${getResourcePrefix()}assets/data/aa-exports/${key}.csv`;
+  }
+
+  if (exportKind === 'fasta') {
+    if (!['alpha', 'beta', 'delta', 'ba2', 'ba45', 'jn1', 'kp2'].includes(key)) return '';
+    return `${getResourcePrefix()}assets/data/fasta-exports/${key}.fasta`;
+  }
+
+  return '';
+}
+
+function resolveVariantExportKey(pageKey) {
+  return String(pageKey || '').replace(/^omicron-/, '');
 }
 
 function downloadText(filename, content, mimeType = 'text/plain;charset=utf-8') {
@@ -1374,7 +1448,7 @@ function applyVariantPageLayout(container) {
   const omicronFiguresSection = container.querySelector('.omicron-evolution-figures');
   const interactiveSection = findSectionByHeading(container, 'Interactive spike structure and sequence by PDB ID');
   const profileSection = findSectionByHeading(container, ['Variant Introduction', 'Variant Profile']);
-  const definingSection = findSectionByHeading(container, 'Defining Mutations');
+  const definingSection = findSectionByHeading(container, ['Defining Mutations', 'Signature Mutations']);
   const sequenceSection = findSectionByHeading(container, [(heading) => heading.startsWith('sequence examples')]);
   const spikeSection = findSectionByHeading(container, 'Spike Structure');
   const phenotypicSection = findSectionByHeading(container, [
@@ -1386,6 +1460,7 @@ function applyVariantPageLayout(container) {
 
   const variantIdentitySection = findSectionByHeading(container, 'Variant Identity and Lineage Context');
   const comparativeSummarySection = findSectionByHeading(container, 'Comparative Summary');
+  const variantSequenceToolSection = container.querySelector('.variant-sequence-tool-fullwidth');
 
   if (profileSection) {
     const profileHeading = profileSection.querySelector('h2');
@@ -1406,7 +1481,7 @@ function applyVariantPageLayout(container) {
   if (definingSection) {
     const definingHeading = definingSection.querySelector('h2, h3, h4');
     if (definingHeading) {
-      definingHeading.textContent = 'Important Mutations';
+      definingHeading.textContent = 'Defining Mutations';
     }
   }
 
@@ -1499,11 +1574,13 @@ function applyVariantPageLayout(container) {
   });
 
   let profileMutationRow = container.querySelector('.variant-pair-row-profile-mutations');
-  if (!profileMutationRow && profileSection && definingSection) {
+  if (!profileMutationRow && profileSection) {
     profileMutationRow = document.createElement('div');
     profileMutationRow.className = 'variant-pair-row variant-pair-row-profile-mutations';
-    profileMutationRow.appendChild(profileSection);
-    profileMutationRow.appendChild(definingSection);
+    if (profileSection) profileMutationRow.appendChild(profileSection);
+  } else if (profileMutationRow) {
+    profileMutationRow.innerHTML = '';
+    if (profileSection) profileMutationRow.appendChild(profileSection);
   }
 
   let sequenceStructureRow = container.querySelector('.variant-pair-row-sequences-structures');
@@ -1520,6 +1597,8 @@ function applyVariantPageLayout(container) {
     cladeSection,
     omicronFiguresSection,
     interactiveSection,
+    variantSequenceToolSection,
+    definingSection,
     profileMutationRow,
     sequenceStructureRow,
     phenotypicSection,
@@ -1585,6 +1664,9 @@ function renderVariantWidget(pageKey) {
     const treeNodes = Array.isArray(data.path) && data.path.length >= 2 ? data.path : (inferredPath.length >= 2 ? inferredPath : ['Wuhan', data.title]);
     const rnaMutationMap = parseVariantRnaTable(variantRnaText);
     const effectiveRnaMutations = pickVariantRnaMutations(rnaMutationMap, data);
+    const exportKey = resolveVariantExportKey(pageKey);
+    const unfilteredAaPath = getVariantUnfilteredExportPath('aa', exportKey);
+    const unfilteredFastaPath = getVariantUnfilteredExportPath('fasta', exportKey);
 
     const genomeRecord = parseFasta(fastaText)[0];
     if (!genomeRecord) return;
@@ -1606,19 +1688,36 @@ function renderVariantWidget(pageKey) {
     const RESULTS_PER_PAGE = 1000;
     let currentResultsPage = 1;
 
+    const rnaBuckets = bucketMutationTokensByDomain(effectiveRnaMutations, true);
+    const proteinBuckets = bucketMutationTokensByDomain(data.proteinMutations, false);
+
     const seqSection = document.createElement('div');
     seqSection.className = 'text-block';
     seqSection.innerHTML = `
-      <h2>Reference sequence, defining RNA, and spike mutations</h2>
-      <!-- Reference, variant catalogs, and workbook lineage label are intentionally hidden for now. -->
-      <div class="comparison-grid">
-        <div class="comparison-card">
-          <h4>Defining RNA mutations</h4>
-          <div class="mutations-list" data-mutation-group="rna">${buildMutationPills(effectiveRnaMutations, { clickable: true, kind: 'rna' })}</div>
+      <h2>Defining Mutations</h2>
+      <p>Select mutations and search dates to preview matching sequences for this variant. The controls below support both direct sequence access and filtered search workflows.</p>
+      <div class="variant-pair-row">
+        <div class="text-block">
+          <h4>Spike RNA mutations</h4>
+          <div class="comparison-grid">
+            ${['NTD', 'RBD', 'CTD', 'S2'].map((domain) => `
+              <div class="comparison-card">
+                <h4>${domain}</h4>
+                <div class="mutations-list" data-mutation-group="rna" data-mutation-domain="${domain}">${buildMutationPills(rnaBuckets[domain] || [], { clickable: true, kind: 'rna', domain })}</div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-        <div class="comparison-card">
-          <h4>Defining spike mutations</h4>
-          <div class="mutations-list" data-mutation-group="protein">${buildMutationPills(data.proteinMutations, { clickable: true, kind: 'protein' })}</div>
+        <div class="text-block">
+          <h4>Spike mutations</h4>
+          <div class="comparison-grid">
+            ${['NTD', 'RBD', 'CTD', 'S2'].map((domain) => `
+              <div class="comparison-card">
+                <h4>${domain}</h4>
+                <div class="mutations-list" data-mutation-group="protein" data-mutation-domain="${domain}">${buildMutationPills(proteinBuckets[domain] || [], { clickable: true, kind: 'protein', domain })}</div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       </div>
       <div class="download-toolbar">
@@ -1639,10 +1738,11 @@ function renderVariantWidget(pageKey) {
         </div>
       </div>
       <div class="button-row">
+        <a class="button-link" href="${unfilteredAaPath}" download="${exportKey}_AArows_unfiltered.csv">Download spike amino acid sequences (CSV)</a>
+        <a class="button-link" href="${unfilteredFastaPath}" download="${exportKey}_spike_unfiltered.fasta">Download spike base sequence (FASTA)</a>
         <button type="button" id="searchButton-${pageKey}">Search</button>
-        <a class="more-link" style="margin-left:12px; align-self:center;" href="${getResourcePrefix()}v2.html?variant=${encodeURIComponent(String(pageKey).replace(/^omicron-/, ''))}">Open in Data →</a>
       </div>
-      <p class="sequence-note">Choose a date range, toggle defining RNA/spike mutations, then press Search to preview the first matching sequence.</p>
+      <p class="sequence-note">Choose a date range, toggle domain-grouped RNA/spike mutations, then press Search to preview the first matching sequence.</p>
     `;
 
     const resultsSection = document.createElement('div');
@@ -1699,109 +1799,21 @@ function renderVariantWidget(pageKey) {
       </div>
     `;
 
-      // Domain-organized mutation lists (NTD, RBD, CTD, S2) — render RNA (left) and spike (right)
-      const domains = {
-        NTD: { min: 1, max: 305 },
-        RBD: { min: 319, max: 541 },
-        CTD: { min: 542, max: 685 },
-        S2: { min: 686, max: 2000 }
-      };
-
-      function mapTokenToDomain(token, isRna = false) {
-        if (!token) return null;
-        const m = String(token).match(/(\d{1,4})/);
-        if (!m) return null;
-        let pos = Number(m[1]);
-        // Convert RNA position (nucleotides) to amino acid position
-        if (isRna) {
-          pos = Math.ceil(pos / 3);
-        }
-        for (const [name, range] of Object.entries(domains)) {
-          if (pos >= range.min && pos <= range.max) return name;
-        }
-        return null;
-      }
-
-      const proteinDomainBuckets = { NTD: [], RBD: [], CTD: [], S2: [] };
-      (Array.isArray(data.proteinMutations) ? data.proteinMutations : []).forEach((tok) => {
-        const d = mapTokenToDomain(tok) || 'CTD';
-        proteinDomainBuckets[d] = proteinDomainBuckets[d] || [];
-        proteinDomainBuckets[d].push(tok);
-      });
-
-      const rnaDomainBuckets = { NTD: [], RBD: [], CTD: [], S2: [] };
-      (Array.isArray(effectiveRnaMutations) ? effectiveRnaMutations : []).forEach((tok) => {
-        const d = mapTokenToDomain(tok, true); // true = isRna
-        if (!d) return; // skip mutations that don't map to spike domains
-        rnaDomainBuckets[d] = rnaDomainBuckets[d] || [];
-        rnaDomainBuckets[d].push(tok);
-      });
-
-      // Sort mutations within each domain by position
-      function sortMutationsByPosition(list) {
-        return list.slice().sort((a, b) => {
-          const mA = String(a).match(/(\d{1,4})/);
-          const mB = String(b).match(/(\d{1,4})/);
-          const posA = mA ? Number(mA[1]) : Infinity;
-          const posB = mB ? Number(mB[1]) : Infinity;
-          return posA - posB;
-        });
-      }
-
-      // Sort all domain buckets
-      ['NTD', 'RBD', 'CTD', 'S2'].forEach((domain) => {
-        proteinDomainBuckets[domain] = sortMutationsByPosition(proteinDomainBuckets[domain]);
-        rnaDomainBuckets[domain] = sortMutationsByPosition(rnaDomainBuckets[domain]);
-      });
-
-      function renderBadges(list, isRna = false) {
-        if (!list || !list.length) return '—';
-        return list.map((tok) => {
-          const domain = mapTokenToDomain(tok, isRna);
-          const cls = domain === 'NTD' ? 'domain-NTD' : domain === 'RBD' ? 'domain-RBD' : domain === 'S2' ? 'domain-S2' : 'domain-CTD';
-          return `<span class="domain-badge ${cls}">${escapeHtml(tok)}</span>`;
-        }).join(' ');
-      }
-
-      structureSection.innerHTML += `
-        <h3>Defining RNA and spike mutations by domain</h3>
-        <div class="variant-pair-row">
-          <div class="text-block">
-            <h4>RNA mutations</h4>
-            <div class="comparison-grid">
-              ${['NTD','RBD','CTD','S2'].map((d) => `
-                <div class="comparison-card">
-                  <h4>${d}</h4>
-                  <div class="mutations-list">${renderBadges(rnaDomainBuckets[d] || [], true)}</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-          <div class="text-block">
-            <h4>Spike mutations</h4>
-            <div class="comparison-grid">
-              ${['NTD','RBD','CTD','S2'].map((d) => `
-                <div class="comparison-card">
-                  <h4>${d}</h4>
-                  <div class="mutations-list">${renderBadges(proteinDomainBuckets[d] || [])}</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-        <p class="sequence-note">Domain boundaries are approximate (NTD, RBD, CTD, S2). Click mutations above to include them in the Data search.</p>
-      `;
+    const sequenceToolSection = document.createElement('div');
+    sequenceToolSection.className = 'visualization-block variant-sequence-tool-fullwidth';
+    sequenceToolSection.appendChild(seqSection);
+    sequenceToolSection.appendChild(resultsSection);
 
     const introBlock = container.querySelector('.text-block');
     const insertionAnchor = introBlock ? introBlock.nextElementSibling : container.firstElementChild;
     if (insertionAnchor) {
       container.insertBefore(treeSection, insertionAnchor);
       container.insertBefore(structureSection, insertionAnchor);
-      // Reference sequence and results panels are moved to the Data page; do not insert here
+      container.insertBefore(sequenceToolSection, insertionAnchor);
     } else {
       container.appendChild(treeSection);
       container.appendChild(structureSection);
-      // Reference sequence and results panels are moved to the Data page; do not insert here
+      container.appendChild(sequenceToolSection);
     }
 
     const pdbSelect = structureSection.querySelector(`#pdbSelect-${pageKey}`);
