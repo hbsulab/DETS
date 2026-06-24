@@ -1448,7 +1448,7 @@ function applyVariantPageLayout(container) {
   const omicronFiguresSection = container.querySelector('.omicron-evolution-figures');
   const interactiveSection = findSectionByHeading(container, 'Interactive spike structure and sequence by PDB ID');
   const profileSection = findSectionByHeading(container, ['Variant Introduction', 'Variant Profile']);
-  const definingSection = findSectionByHeading(container, ['Defining Mutations', 'Signature Mutations']);
+  const definingSection = findSectionByHeading(container, ['Signature Mutations', 'Defining Mutations']);
   const sequenceSection = findSectionByHeading(container, [(heading) => heading.startsWith('sequence examples')]);
   const spikeSection = findSectionByHeading(container, 'Spike Structure');
   const phenotypicSection = findSectionByHeading(container, [
@@ -1481,7 +1481,7 @@ function applyVariantPageLayout(container) {
   if (definingSection) {
     const definingHeading = definingSection.querySelector('h2, h3, h4');
     if (definingHeading) {
-      definingHeading.textContent = 'Defining Mutations';
+      definingHeading.textContent = 'Signature Mutations';
     }
   }
 
@@ -1574,13 +1574,15 @@ function applyVariantPageLayout(container) {
   });
 
   let profileMutationRow = container.querySelector('.variant-pair-row-profile-mutations');
-  if (!profileMutationRow && profileSection) {
+  if (!profileMutationRow && (profileSection || definingSection)) {
     profileMutationRow = document.createElement('div');
     profileMutationRow.className = 'variant-pair-row variant-pair-row-profile-mutations';
     if (profileSection) profileMutationRow.appendChild(profileSection);
+    if (definingSection) profileMutationRow.appendChild(definingSection);
   } else if (profileMutationRow) {
     profileMutationRow.innerHTML = '';
     if (profileSection) profileMutationRow.appendChild(profileSection);
+    if (definingSection) profileMutationRow.appendChild(definingSection);
   }
 
   let sequenceStructureRow = container.querySelector('.variant-pair-row-sequences-structures');
@@ -1598,7 +1600,6 @@ function applyVariantPageLayout(container) {
     omicronFiguresSection,
     interactiveSection,
     variantSequenceToolSection,
-    definingSection,
     profileMutationRow,
     sequenceStructureRow,
     phenotypicSection,
@@ -1694,7 +1695,7 @@ function renderVariantWidget(pageKey) {
     const seqSection = document.createElement('div');
     seqSection.className = 'text-block';
     seqSection.innerHTML = `
-      <h2>Defining Mutations</h2>
+      <h2>Variant Sequence Download Tool</h2>
       <p>Select mutations and search dates to preview matching sequences for this variant. The controls below support both direct sequence access and filtered search workflows.</p>
       <div class="variant-pair-row">
         <div class="text-block">
