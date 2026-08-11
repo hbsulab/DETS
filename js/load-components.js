@@ -2247,8 +2247,8 @@ function renderComponentWidget(pageKey) {
     if (pageKey === 'spike') {
       spikeSection.className = 'feature-panel';
       spikeSection.innerHTML = `
-        <h3>Reference spike sequence (EPI_ISL_402123)</h3>
-        <p>The page uses the Wuhan-Hu-1 spike coding region from EPI_ISL_402123 so users can inspect the reference sequence before comparing variants.</p>
+        <h3>Reference spike sequence (EPI_ISL_402124)</h3>
+        <p>The page uses the Wuhan-Hu-1 spike coding region from EPI_ISL_402124 so users can inspect the reference sequence before comparing variants.</p>
         <div class="sequence-viewer">${escapeHtml(spikeProtein.match(/.{1,60}/g).join('\n'))}</div>
         <p class="sequence-note">This sequence is the Wuhan reference used throughout the spike pages and variant comparisons.</p>
       `;
